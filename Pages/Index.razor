@@ -1,0 +1,471 @@
+@page "/"
+@using EbayTemplateGenerator.Models
+@using EbayTemplateGenerator.Services
+@using System.Text.Json
+@inject TemplateGeneratorService TemplateGenerator
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject IJSRuntime JS
+
+<div class="app-container">
+    <header class="app-header">
+        <h1>relexx' Template Generator</h1>
+        <div class="phase-indicator">
+            <div class="phase @(currentPhase == 1 ? "active" : currentPhase > 1 ? "completed" : "")">
+                <span class="phase-number">1</span>
+                <span class="phase-label">Eingabe</span>
+            </div>
+            <div class="phase-connector @(currentPhase > 1 ? "completed" : "")"></div>
+            <div class="phase @(currentPhase == 2 ? "active" : currentPhase > 2 ? "completed" : "")">
+                <span class="phase-number">2</span>
+                <span class="phase-label">Vorschau</span>
+            </div>
+            <div class="phase-connector @(currentPhase > 2 ? "completed" : "")"></div>
+            <div class="phase @(currentPhase == 3 ? "active" : "")">
+                <span class="phase-number">3</span>
+                <span class="phase-label">HTML</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-main">
+        @if (currentPhase == 1)
+        {
+            <!-- Phase 1: Input -->
+            <div class="input-phase">
+            <div class="toolbar">
+                    <button class="btn btn-secondary" @onclick="LoadDemo">
+                        <span class="icon">📋</span> Demo laden
+                    </button>
+                    <button class="btn btn-secondary" @onclick="ResetAll">
+                        <span class="icon">🗑️</span> Zurücksetzen
+                    </button>
+                    <button class="btn btn-secondary" @onclick="CopyJsonSchema">
+                        <span class="icon">🤖</span> JSON-Schema kopieren
+                    </button>
+                    <button class="btn btn-secondary" @onclick="ExportJson">
+                        <span class="icon">📤</span> Export
+                    </button>
+                    <label class="btn btn-secondary">
+                        <span class="icon">📥</span> Import
+                        <InputFile OnChange="ImportJson" accept=".json" style="display: none;" />
+                    </label>
+                    <span class="autosave-indicator @(isSaving ? "saving" : "")">
+                        @(isSaving ? "Speichert..." : lastSaved.HasValue ? $"Gespeichert: {lastSaved.Value:HH:mm:ss}" : "")
+                    </span>
+                </div>
+
+                <div class="form-grid">
+                    <!-- Header Section -->
+                    <div class="form-section">
+                        <h2>📌 Header</h2>
+                        <div class="form-group">
+                            <label for="title">Titel</label>
+                            <input type="text" id="title" @bind="data.Title" placeholder="Produktname" />
+                        </div>
+                        <div class="form-group">
+                            <label for="subtitle">Untertitel</label>
+                            <input type="text" id="subtitle" @bind="data.Subtitle" placeholder="Kurzbeschreibung │ Artikelnummer" />
+                        </div>
+                    </div>
+
+                    <!-- Image Section -->
+                    <div class="form-section">
+                        <h2>🖼️ Produktbild</h2>
+                        <div class="form-group image-input-group">
+                            <label for="imageUrl">Bild-URL oder Base64</label>
+                            <div class="input-with-button">
+                                <input type="text" id="imageUrl" @bind="data.ImageUrl" placeholder="https://..." />
+                                <label class="btn btn-accent">
+                                    <span class="icon">📷</span> Bild hochladen
+                                    <InputFile OnChange="UploadImage" accept="image/*" style="display: none;" />
+                                </label>
+                            </div>
+                            @if (!string.IsNullOrEmpty(data.ImageUrl))
+                            {
+                                <div class="image-preview">
+                                    <img src="@data.ImageUrl" alt="Vorschau" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Mobile Summary -->
+                    <div class="form-section">
+                        <h2>📱 Mobile Summary</h2>
+                        <div class="form-group">
+                            <label for="mobileSummary">Zusammenfassung (max. 800 Zeichen)</label>
+                            <textarea id="mobileSummary" @bind="data.MobileSummary" rows="3" 
+                                      placeholder="Kurze Produktbeschreibung für mobile Vorschau und Google Shopping..."></textarea>
+                            <span class="char-count @(data.MobileSummary?.Length > 800 ? "over-limit" : "")">
+                                @(data.MobileSummary?.Length ?? 0) / 800
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="form-section">
+                        <h2>📝 Beschreibung</h2>
+                        <div class="form-group">
+                            <label for="description">Produktbeschreibung (Markdown unterstützt)</label>
+                            <textarea id="description" @bind="data.Description" rows="6" 
+                                      placeholder="**Fettgedruckt** und *kursiv* werden unterstützt..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Highlights -->
+                    <div class="form-section">
+                        <h2>✦ Highlights</h2>
+                        <div class="form-group">
+                            <label for="highlights">Pro Zeile: Titel | Beschreibung</label>
+                            <textarea id="highlights" @bind="data.Highlights" rows="7" 
+                                      placeholder="FlowDrive-Pumpe | Leiser Dreiphasenmotor für optimale Wärmeeffizienz
+3× RX120 RGB-Lüfter | 120mm Lüfter mit hohem Luftdurchsatz"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Technical Data -->
+                    <div class="form-section">
+                        <h2>⚙ Technische Daten</h2>
+                        <div class="form-group">
+                            <label for="technicalData">Pro Zeile: Spezifikation | Wert</label>
+                            <textarea id="technicalData" @bind="data.TechnicalData" rows="8" 
+                                      placeholder="Radiatorgröße | 360mm (396 × 120 × 27 mm)
+Lüfter | 3× 120mm RX120 RGB"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Compatibility -->
+                    <div class="form-section">
+                        <h2>🔧 Kompatibilität</h2>
+                        <div class="form-group">
+                            <label for="compatibility">Pro Zeile: Plattform | Sockel</label>
+                            <textarea id="compatibility" @bind="data.Compatibility" rows="3" 
+                                      placeholder="Intel | LGA 1851 │ LGA 1700
+AMD | AM5 │ AM4"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Delivery Scope -->
+                    <div class="form-section">
+                        <h2>📦 Lieferumfang</h2>
+                        <div class="form-group">
+                            <label for="deliveryScope">Pro Zeile: Ein Artikel</label>
+                            <textarea id="deliveryScope" @bind="data.DeliveryScope" rows="5" 
+                                      placeholder="Wasserkühlung komplett
+3× Lüfter (vorinstalliert)
+Montagematerial"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="form-section">
+                        <h2>🏷️ Fußzeile</h2>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="footer1">Links</label>
+                                <input type="text" id="footer1" @bind="data.Footer1" placeholder="SKU: ABC123" />
+                            </div>
+                            <div class="form-group">
+                                <label for="footer2">Mitte</label>
+                                <input type="text" id="footer2" @bind="data.Footer2" placeholder="Farbe: Schwarz" />
+                            </div>
+                            <div class="form-group">
+                                <label for="footer3">Rechts</label>
+                                <input type="text" id="footer3" @bind="data.Footer3" placeholder="Garantie: 2 Jahre" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Colors -->
+                    <div class="form-section">
+                        <h2>🎨 Farbschema</h2>
+                        <div class="form-row color-row">
+                            <div class="form-group color-picker-group">
+                                <label for="primaryColor">Primärfarbe</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="primaryColor" @bind="data.PrimaryColor" />
+                                    <input type="text" @bind="data.PrimaryColor" class="color-text" />
+                                </div>
+                            </div>
+                            <div class="form-group color-picker-group">
+                                <label for="accentColor">Akzentfarbe</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="accentColor" @bind="data.AccentColor" />
+                                    <input type="text" @bind="data.AccentColor" class="color-text" />
+                                </div>
+                            </div>
+                            <div class="form-group color-picker-group">
+                                <label for="backgroundColor">Hintergrund</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="backgroundColor" @bind="data.BackgroundColor" />
+                                    <input type="text" @bind="data.BackgroundColor" class="color-text" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nav-buttons">
+                    <div></div>
+                    <button class="btn btn-primary btn-large" @onclick="GoToPreview">
+                        Weiter zur Vorschau <span class="icon">→</span>
+                    </button>
+                </div>
+            </div>
+        }
+        else if (currentPhase == 2)
+        {
+            <!-- Phase 2: Preview -->
+            <div class="preview-phase">
+                <div class="preview-container">
+                    <div class="preview-frame">
+                        @((MarkupString)generatedHtml)
+                    </div>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary btn-large" @onclick="GoToInput">
+                        <span class="icon">←</span> Zurück zur Eingabe
+                    </button>
+                    <button class="btn btn-primary btn-large" @onclick="GoToHtml">
+                        Weiter zum HTML <span class="icon">→</span>
+                    </button>
+                </div>
+            </div>
+        }
+        else if (currentPhase == 3)
+        {
+            <!-- Phase 3: HTML -->
+            <div class="html-phase">
+                <div class="html-container">
+                    <div class="html-toolbar">
+                        <button class="btn btn-primary" @onclick="CopyHtml">
+                            <span class="icon">📋</span> In Zwischenablage kopieren
+                        </button>
+                        <button class="btn btn-accent" @onclick="DownloadHtml">
+                            <span class="icon">💾</span> Als Datei herunterladen
+                        </button>
+                    </div>
+                    <pre class="html-code"><code>@generatedHtml</code></pre>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary btn-large" @onclick="GoToPreview">
+                        <span class="icon">←</span> Zurück zur Vorschau
+                    </button>
+                    <button class="btn btn-secondary btn-large" @onclick="GoToInput">
+                        <span class="icon">🔄</span> Neue Vorlage erstellen
+                    </button>
+                </div>
+            </div>
+        }
+    </main>
+</div>
+
+@if (showCopyNotification)
+{
+    <div class="notification @(copySuccess ? "success" : "error")">
+        @notificationMessage
+    </div>
+}
+
+@code {
+    private TemplateData data = new();
+    private int currentPhase = 1;
+    private string generatedHtml = string.Empty;
+    private bool isSaving = false;
+    private DateTime? lastSaved;
+    private bool showCopyNotification = false;
+    private bool copySuccess = false;
+    private string notificationMessage = "";
+    private System.Threading.Timer? autoSaveTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load from LocalStorage
+        try
+        {
+            var savedData = await LocalStorage.GetItemAsync<TemplateData>("relexx-template-data");
+            if (savedData != null)
+            {
+                data = savedData;
+            }
+        }
+        catch { }
+
+        // Start autosave timer (every 10 seconds)
+        autoSaveTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await SaveToLocalStorage();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
+    }
+
+    private async Task SaveToLocalStorage()
+    {
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+            await LocalStorage.SetItemAsync("relexx-template-data", data);
+            lastSaved = DateTime.Now;
+            isSaving = false;
+        }
+        catch { isSaving = false; }
+    }
+
+    private void LoadDemo()
+    {
+        data = TemplateData.GetDemoData();
+    }
+
+    private void ResetAll()
+    {
+        data = new TemplateData();
+    }
+
+    private async Task CopyJsonSchema()
+    {
+        var schema = @"{
+  ""$schema"": ""Eingabedaten für relexx' Template Generator"",
+  ""description"": ""Kopiere dieses JSON und fülle die Felder aus. Das Ergebnis kann direkt in den Template Generator importiert werden."",
+  ""Title"": ""Produktname (Hauptüberschrift)"",
+  ""Subtitle"": ""Kurzbeschreibung │ Artikelnummer │ Kategorie"",
+  ""ImageUrl"": ""https://beispiel.de/bild.jpg (HTTPS-URL oder leer lassen)"",
+  ""MobileSummary"": ""Kurze Zusammenfassung für mobile Vorschau und Google Shopping. Maximal 800 Zeichen, nur Plain-Text."",
+  ""Description"": ""Ausführliche Produktbeschreibung. **Markdown** wird unterstützt für *Hervorhebungen*."",
+  ""Highlights"": ""Titel1 | Beschreibung1\nTitel2 | Beschreibung2\nTitel3 | Beschreibung3"",
+  ""TechnicalData"": ""Spezifikation1 | Wert1\nSpezifikation2 | Wert2\nSpezifikation3 | Wert3"",
+  ""Compatibility"": ""Plattform1 | Variante1 │ Variante2\nPlattform2 | Variante3 │ Variante4"",
+  ""DeliveryScope"": ""Artikel 1\nArtikel 2\nArtikel 3"",
+  ""Footer1"": ""Label: Wert (z.B. SKU: ABC123)"",
+  ""Footer2"": ""Label: Wert (z.B. Farbe: Schwarz)"",
+  ""Footer3"": ""Label: Wert (z.B. Garantie: 2 Jahre)"",
+  ""PrimaryColor"": ""#1a1a1a"",
+  ""AccentColor"": ""#f5c518"",
+  ""BackgroundColor"": ""#f8f9fa""
+}";
+        
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", schema);
+            copySuccess = true;
+            notificationMessage = "✓ JSON-Schema in Zwischenablage kopiert!";
+        }
+        catch
+        {
+            copySuccess = false;
+            notificationMessage = "✗ Kopieren fehlgeschlagen";
+        }
+        
+        showCopyNotification = true;
+        StateHasChanged();
+        
+        await Task.Delay(3000);
+        showCopyNotification = false;
+        StateHasChanged();
+    }
+
+    private async Task ExportJson()
+    {
+        var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+        var fileName = $"ebay-template-{DateTime.Now:yyyy-MM-dd-HHmmss}.json";
+        await JS.InvokeVoidAsync("downloadFile", fileName, "application/json", json);
+    }
+
+    private async Task ImportJson(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            using var stream = file.OpenReadStream(maxAllowedSize: 1024 * 1024);
+            var importedData = await JsonSerializer.DeserializeAsync<TemplateData>(stream);
+            if (importedData != null)
+            {
+                data = importedData;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Import fehlgeschlagen: {ex.Message}");
+        }
+    }
+
+    private async Task UploadImage(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file.Size > 5 * 1024 * 1024)
+            {
+                await JS.InvokeVoidAsync("alert", "Bild zu groß! Maximum: 5 MB");
+                return;
+            }
+
+            using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var base64 = Convert.ToBase64String(ms.ToArray());
+            var mimeType = file.ContentType;
+            data.ImageUrl = $"data:{mimeType};base64,{base64}";
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Upload fehlgeschlagen: {ex.Message}");
+        }
+    }
+
+    private void GoToPreview()
+    {
+        generatedHtml = TemplateGenerator.GenerateHtml(data);
+        currentPhase = 2;
+    }
+
+    private void GoToInput()
+    {
+        currentPhase = 1;
+    }
+
+    private void GoToHtml()
+    {
+        currentPhase = 3;
+    }
+
+    private async Task CopyHtml()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", generatedHtml);
+            copySuccess = true;
+            notificationMessage = "✓ HTML in Zwischenablage kopiert!";
+        }
+        catch
+        {
+            copySuccess = false;
+            notificationMessage = "✗ Kopieren fehlgeschlagen";
+        }
+        
+        showCopyNotification = true;
+        StateHasChanged();
+        
+        await Task.Delay(3000);
+        showCopyNotification = false;
+        StateHasChanged();
+    }
+
+    private async Task DownloadHtml()
+    {
+        var fileName = $"ebay-template-{DateTime.Now:yyyy-MM-dd-HHmmss}.html";
+        await JS.InvokeVoidAsync("downloadFile", fileName, "text/html", generatedHtml);
+    }
+
+    public void Dispose()
+    {
+        autoSaveTimer?.Dispose();
+    }
+}
