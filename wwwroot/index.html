@@ -10,6 +10,22 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link href="css/app.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        #blazor-error-ui {
+            display: none;
+            background: #ffdc2a;
+            color: #1a1a1a;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 8px 16px;
+            text-align: center;
+            z-index: 9999;
+        }
+        #blazor-error-ui.show { display: block; }
+    </style>
 </head>
 <body>
     <div id="app">
@@ -38,6 +54,35 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        };
+
+        // SortableJS initialization
+        window.initSortable = function(elementId, dotNetHelper) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            
+            if (el._sortable) {
+                el._sortable.destroy();
+            }
+            
+            el._sortable = new Sortable(el, {
+                animation: 150,
+                handle: '.drag-handle',
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                onEnd: function(evt) {
+                    dotNetHelper.invokeMethodAsync('OnBlockReordered', evt.oldIndex, evt.newIndex);
+                }
+            });
+        };
+        
+        window.destroySortable = function(elementId) {
+            const el = document.getElementById(elementId);
+            if (el && el._sortable) {
+                el._sortable.destroy();
+                el._sortable = null;
+            }
         };
     </script>
 </body>

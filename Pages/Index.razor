@@ -5,240 +5,372 @@
 @inject TemplateGeneratorService TemplateGenerator
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject IJSRuntime JS
+@implements IAsyncDisposable
 
 <div class="app-container">
     <header class="app-header">
         <h1>relexx' Template Generator</h1>
+        
+        <div class="header-center">
+            <span class="header-title">@(string.IsNullOrWhiteSpace(article.Title) ? "Neuer Artikel" : article.Title)</span>
+            <span class="header-divider">│</span>
+            <span class="header-layout">@currentLayout.Name</span>
+        </div>
+        
         <div class="phase-indicator">
-            <div class="phase @(currentPhase == 1 ? "active" : currentPhase > 1 ? "completed" : "")">
-                <span class="phase-number">1</span>
-                <span class="phase-label">Eingabe</span>
-            </div>
-            <div class="phase-connector @(currentPhase > 1 ? "completed" : "")"></div>
-            <div class="phase @(currentPhase == 2 ? "active" : currentPhase > 2 ? "completed" : "")">
-                <span class="phase-number">2</span>
-                <span class="phase-label">Vorschau</span>
-            </div>
-            <div class="phase-connector @(currentPhase > 2 ? "completed" : "")"></div>
-            <div class="phase @(currentPhase == 3 ? "active" : "")">
-                <span class="phase-number">3</span>
-                <span class="phase-label">HTML</span>
-            </div>
+            @for (int i = 0; i <= 3; i++)
+            {
+                var phase = i;
+                <div class="phase @(currentPhase == phase ? "active" : currentPhase > phase ? "completed" : "")" 
+                     @onclick="() => GoToPhase(phase)">
+                    <span class="phase-number">@phase</span>
+                    <span class="phase-label">@GetPhaseName(phase)</span>
+                </div>
+                @if (i < 3)
+                {
+                    <div class="phase-connector @(currentPhase > phase ? "completed" : "")"></div>
+                }
+            }
         </div>
     </header>
 
     <main class="app-main">
-        @if (currentPhase == 1)
+        @* ═══════════════ PHASE 0: LAYOUT ═══════════════ *@
+        @if (currentPhase == 0)
         {
-            <!-- Phase 1: Input -->
-            <div class="input-phase">
-            <div class="toolbar">
-                    <button class="btn btn-secondary" @onclick="LoadDemo">
-                        <span class="icon">📋</span> Demo laden
+            <div class="phase-content layout-phase">
+                <div class="toolbar">
+                    <select class="layout-select" @bind="selectedLayoutId" @bind:after="OnLayoutSelected">
+                        @foreach (var l in layouts)
+                        {
+                            <option value="@l.Id">@l.Name @(l.IsDefault ? "(Standard)" : "")</option>
+                        }
+                    </select>
+                    <button class="btn btn-secondary" @onclick="CreateNewLayout" title="Neues Layout erstellen">
+                        <span class="icon">➕</span> Neu
                     </button>
-                    <button class="btn btn-secondary" @onclick="ResetAll">
-                        <span class="icon">🗑️</span> Zurücksetzen
+                    <button class="btn btn-secondary" @onclick="DuplicateLayout" title="Layout duplizieren">
+                        <span class="icon">📋</span> Duplizieren
                     </button>
-                    <button class="btn btn-secondary" @onclick="CopyJsonSchema">
-                        <span class="icon">🤖</span> JSON-Schema kopieren
-                    </button>
-                    <button class="btn btn-secondary" @onclick="ExportJson">
+                    <button class="btn btn-secondary" @onclick="ExportLayout" title="Layout exportieren">
                         <span class="icon">📤</span> Export
                     </button>
-                    <label class="btn btn-secondary">
+                    <label class="btn btn-secondary" title="Layout importieren">
                         <span class="icon">📥</span> Import
-                        <InputFile OnChange="ImportJson" accept=".json" style="display: none;" />
+                        <InputFile OnChange="ImportLayout" accept=".json" style="display: none;" />
                     </label>
-                    <span class="autosave-indicator @(isSaving ? "saving" : "")">
-                        @(isSaving ? "Speichert..." : lastSaved.HasValue ? $"Gespeichert: {lastSaved.Value:HH:mm:ss}" : "")
-                    </span>
+                    <button class="btn btn-danger" @onclick="DeleteLayout" 
+                            disabled="@(currentLayout.IsDefault || layouts.Count <= 1)" 
+                            title="Layout löschen">
+                        <span class="icon">🗑️</span>
+                    </button>
                 </div>
 
-                <div class="form-grid">
-                    <!-- Header Section -->
-                    <div class="form-section">
-                        <h2>📌 Header</h2>
-                        <div class="form-group">
-                            <label for="title">Titel</label>
-                            <input type="text" id="title" @bind="data.Title" placeholder="Produktname" />
+                <div class="layout-editor">
+                    @* ─── Linke Spalte: Block-Liste ─── *@
+                    <div class="layout-sidebar">
+                        <div class="sidebar-section">
+                            <label>Layout-Name</label>
+                            <input type="text" @bind="currentLayout.Name" @bind:after="SaveLayouts" 
+                                   disabled="@currentLayout.IsDefault" placeholder="Layout-Name" />
                         </div>
-                        <div class="form-group">
-                            <label for="subtitle">Untertitel</label>
-                            <input type="text" id="subtitle" @bind="data.Subtitle" placeholder="Kurzbeschreibung │ Artikelnummer" />
+
+                        <div class="sidebar-section">
+                            <div class="section-header">
+                                <h3>Blöcke</h3>
+                                <button class="btn btn-small btn-accent" @onclick="ShowAddBlockDialog">
+                                    <span class="icon">➕</span>
+                                </button>
+                            </div>
+                            <div class="block-list" id="block-list">
+                                @foreach (var block in currentLayout.Blocks.OrderBy(b => b.Order))
+                                {
+                                    <div class="block-item @(selectedBlockId == block.Id ? "selected" : "")"
+                                         data-id="@block.Id"
+                                         @onclick="() => SelectBlock(block)">
+                                        <span class="drag-handle">☰</span>
+                                        <span class="block-icon">@block.Icon</span>
+                                        <span class="block-title">@block.Title</span>
+                                        <span class="block-type">@block.Type.GetDisplayName()</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="sidebar-section">
+                            <h3>🎨 Farbschema</h3>
+                            <div class="color-row">
+                                <label>Primär</label>
+                                <input type="color" @bind="currentLayout.Colors.PrimaryColor" @bind:after="SaveLayouts" />
+                                <input type="text" class="color-text" @bind="currentLayout.Colors.PrimaryColor" @bind:after="SaveLayouts" />
+                            </div>
+                            <div class="color-row">
+                                <label>Akzent</label>
+                                <input type="color" @bind="currentLayout.Colors.AccentColor" @bind:after="SaveLayouts" />
+                                <input type="text" class="color-text" @bind="currentLayout.Colors.AccentColor" @bind:after="SaveLayouts" />
+                            </div>
+                            <div class="color-row">
+                                <label>Hintergrund</label>
+                                <input type="color" @bind="currentLayout.Colors.BackgroundColor" @bind:after="SaveLayouts" />
+                                <input type="text" class="color-text" @bind="currentLayout.Colors.BackgroundColor" @bind:after="SaveLayouts" />
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Image Section -->
-                    <div class="form-section">
-                        <h2>🖼️ Produktbild</h2>
-                        <div class="form-group image-input-group">
-                            <label for="imageUrl">Bild-URL oder Base64</label>
-                            <div class="input-with-button">
-                                <input type="text" id="imageUrl" @bind="data.ImageUrl" placeholder="https://..." />
-                                <label class="btn btn-accent">
-                                    <span class="icon">📷</span> Bild hochladen
-                                    <InputFile OnChange="UploadImage" accept="image/*" style="display: none;" />
-                                </label>
+                    @* ─── Rechte Spalte: Block-Editor ─── *@
+                    <div class="block-editor">
+                        @if (selectedBlock != null)
+                        {
+                            <h3>Block bearbeiten</h3>
+                            
+                            <div class="editor-group">
+                                <label>Block-Typ</label>
+                                <select @bind="selectedBlock.Type" @bind:after="OnBlockTypeChanged">
+                                    @foreach (BlockType t in Enum.GetValues<BlockType>())
+                                    {
+                                        <option value="@t">@t.GetDisplayName()</option>
+                                    }
+                                </select>
                             </div>
-                            @if (!string.IsNullOrEmpty(data.ImageUrl))
+
+                            <div class="editor-group">
+                                <label>Icon</label>
+                                <div class="icon-picker">
+                                    @foreach (var icon in availableIcons)
+                                    {
+                                        <button type="button" class="icon-btn @(selectedBlock.Icon == icon ? "selected" : "")"
+                                                @onclick="() => SetBlockIcon(icon)">@icon</button>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="editor-group">
+                                <label>Überschrift</label>
+                                <input type="text" @bind="selectedBlock.Title" @bind:after="SaveLayouts" />
+                            </div>
+
+                            @* Typ-spezifische Optionen *@
+                            @if (selectedBlock.Type == BlockType.KeyValueGrid)
                             {
-                                <div class="image-preview">
-                                    <img src="@data.ImageUrl" alt="Vorschau" />
+                                <div class="editor-group">
+                                    <label>Spalten</label>
+                                    <select @bind="selectedBlock.Options.Columns" @bind:after="SaveLayouts">
+                                        <option value="1">1 Spalte</option>
+                                        <option value="2">2 Spalten</option>
+                                        <option value="3">3 Spalten</option>
+                                    </select>
+                                </div>
+                                <div class="editor-group">
+                                    <label>Aufzählungszeichen</label>
+                                    <div class="bullet-picker">
+                                        @foreach (var b in availableBullets)
+                                        {
+                                            <button type="button" class="bullet-btn @(selectedBlock.Options.BulletChar == b ? "selected" : "")"
+                                                    @onclick="() => SetBullet(b)">@b</button>
+                                        }
+                                    </div>
                                 </div>
                             }
-                        </div>
-                    </div>
 
-                    <!-- Mobile Summary -->
-                    <div class="form-section">
-                        <h2>📱 Mobile Summary</h2>
-                        <div class="form-group">
-                            <label for="mobileSummary">Zusammenfassung (max. 800 Zeichen)</label>
-                            <textarea id="mobileSummary" @bind="data.MobileSummary" rows="3" 
-                                      placeholder="Kurze Produktbeschreibung für mobile Vorschau und Google Shopping..."></textarea>
-                            <span class="char-count @(data.MobileSummary?.Length > 800 ? "over-limit" : "")">
-                                @(data.MobileSummary?.Length ?? 0) / 800
-                            </span>
-                        </div>
-                    </div>
+                            @if (selectedBlock.Type == BlockType.DataTable)
+                            {
+                                <div class="editor-group">
+                                    <label>Spalte 1</label>
+                                    <input type="text" @bind="selectedBlock.Options.Column1Header" @bind:after="SaveLayouts" />
+                                </div>
+                                <div class="editor-group">
+                                    <label>Spalte 2</label>
+                                    <input type="text" @bind="selectedBlock.Options.Column2Header" @bind:after="SaveLayouts" />
+                                </div>
+                                <div class="editor-group checkbox-group">
+                                    <label>
+                                        <input type="checkbox" @bind="selectedBlock.Options.ShowColumnHeaders" @bind:after="SaveLayouts" />
+                                        Spaltenüberschriften
+                                    </label>
+                                </div>
+                                <div class="editor-group checkbox-group">
+                                    <label>
+                                        <input type="checkbox" @bind="selectedBlock.Options.AlternatingBackground" @bind:after="SaveLayouts" />
+                                        Zebra-Streifen
+                                    </label>
+                                </div>
+                            }
 
-                    <!-- Description -->
-                    <div class="form-section">
-                        <h2>📝 Beschreibung</h2>
-                        <div class="form-group">
-                            <label for="description">Produktbeschreibung (Markdown unterstützt)</label>
-                            <textarea id="description" @bind="data.Description" rows="6" 
-                                      placeholder="**Fettgedruckt** und *kursiv* werden unterstützt..."></textarea>
-                        </div>
-                    </div>
+                            @if (selectedBlock.Type == BlockType.CheckList)
+                            {
+                                <div class="editor-group">
+                                    <label>Aufzählungszeichen</label>
+                                    <div class="bullet-picker">
+                                        @foreach (var b in availableBullets)
+                                        {
+                                            <button type="button" class="bullet-btn @(selectedBlock.Options.BulletChar == b ? "selected" : "")"
+                                                    @onclick="() => SetBullet(b)">@b</button>
+                                        }
+                                    </div>
+                                </div>
+                            }
 
-                    <!-- Highlights -->
-                    <div class="form-section">
-                        <div class="section-header">
-                            <h2>✦ <input type="text" class="section-title-input" @bind="sectionTitles.Highlights" /></h2>
-                            <button class="btn-clear" @onclick="() => data.Highlights = string.Empty" title="Inhalt löschen">×</button>
-                        </div>
-                        <div class="form-group">
-                            <label for="highlights">Pro Zeile: Titel | Beschreibung</label>
-                            <textarea id="highlights" @bind="data.Highlights" rows="7" 
-                                      placeholder="FlowDrive-Pumpe | Leiser Dreiphasenmotor für optimale Wärmeeffizienz
-3× RX120 RGB-Lüfter | 120mm Lüfter mit hohem Luftdurchsatz"></textarea>
-                        </div>
-                    </div>
+                            @if (selectedBlock.Type == BlockType.Image)
+                            {
+                                <div class="editor-group">
+                                    <label>Ausrichtung</label>
+                                    <select @bind="selectedBlock.Options.Alignment" @bind:after="SaveLayouts">
+                                        <option value="left">Links</option>
+                                        <option value="center">Zentriert</option>
+                                        <option value="right">Rechts</option>
+                                    </select>
+                                </div>
+                                <div class="editor-group">
+                                    <label>Max. Breite (px)</label>
+                                    <input type="number" @bind="selectedBlock.Options.MaxWidth" @bind:after="SaveLayouts" min="100" max="800" />
+                                </div>
+                            }
 
-                    <!-- Technical Data -->
-                    <div class="form-section">
-                        <div class="section-header">
-                            <h2>⚙ <input type="text" class="section-title-input" @bind="sectionTitles.TechnicalData" /></h2>
-                            <button class="btn-clear" @onclick="() => data.TechnicalData = string.Empty" title="Inhalt löschen">×</button>
-                        </div>
-                        <div class="form-group">
-                            <label for="technicalData">Pro Zeile: Spezifikation | Wert</label>
-                            <textarea id="technicalData" @bind="data.TechnicalData" rows="8" 
-                                      placeholder="Radiatorgröße | 360mm (396 × 120 × 27 mm)
-Lüfter | 3× 120mm RX120 RGB"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Compatibility -->
-                    <div class="form-section">
-                        <div class="section-header">
-                            <h2>🔧 <input type="text" class="section-title-input" @bind="sectionTitles.Compatibility" /></h2>
-                            <button class="btn-clear" @onclick="() => data.Compatibility = string.Empty" title="Inhalt löschen">×</button>
-                        </div>
-                        <div class="form-group">
-                            <label for="compatibility">Pro Zeile: Plattform | Sockel</label>
-                            <textarea id="compatibility" @bind="data.Compatibility" rows="3" 
-                                      placeholder="Intel | LGA 1851 │ LGA 1700
-AMD | AM5 │ AM4"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Delivery Scope -->
-                    <div class="form-section">
-                        <div class="section-header">
-                            <h2>📦 <input type="text" class="section-title-input" @bind="sectionTitles.DeliveryScope" /></h2>
-                            <button class="btn-clear" @onclick="() => data.DeliveryScope = string.Empty" title="Inhalt löschen">×</button>
-                        </div>
-                        <div class="form-group">
-                            <label for="deliveryScope">Pro Zeile: Ein Artikel</label>
-                            <textarea id="deliveryScope" @bind="data.DeliveryScope" rows="5" 
-                                      placeholder="Wasserkühlung komplett
-3× Lüfter (vorinstalliert)
-Montagematerial"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Footer -->
-                    <div class="form-section">
-                        <div class="section-header">
-                            <h2>🏷️ Fußzeile</h2>
-                            <button class="btn-clear" @onclick="() => data.Footer = string.Empty" title="Inhalt löschen">×</button>
-                        </div>
-                        <div class="form-group">
-                            <label for="footer">Pro Zeile ein Eintrag, max. 4 Zeilen (Format: Label: Wert)</label>
-                            <textarea id="footer" @bind="data.Footer" @bind:after="ValidateFooter" rows="4" 
-                                      placeholder="SKU: ABC123
-Farbe: Schwarz
-Garantie: 2 Jahre
-EAN: 1234567890123"></textarea>
-                            <span class="char-count @(GetFooterLineCount() > 4 ? "over-limit" : "")">
-                                @GetFooterLineCount() / 4 Zeilen
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Colors -->
-                    <div class="form-section">
-                        <div class="section-header">
-                            <h2>🎨 Farbschema</h2>
-                            <div class="color-buttons">
-                                <button class="btn btn-small btn-secondary" @onclick="SaveColorScheme" title="Aktuelles Farbschema als Standard speichern">
-                                    💾 Speichern
-                                </button>
-                                <button class="btn btn-small btn-secondary" @onclick="LoadColorScheme" title="Gespeichertes Standard-Farbschema laden">
-                                    📂 Laden
+                            <div class="editor-actions">
+                                <button class="btn btn-danger" @onclick="DeleteBlock">
+                                    <span class="icon">🗑️</span> Block löschen
                                 </button>
                             </div>
-                        </div>
-                        <div class="form-row color-row">
-                            <div class="form-group color-picker-group">
-                                <label for="primaryColor">Primärfarbe</label>
-                                <div class="color-input-wrapper">
-                                    <input type="color" id="primaryColor" @bind="data.PrimaryColor" />
-                                    <input type="text" @bind="data.PrimaryColor" class="color-text" />
-                                </div>
+                        }
+                        else
+                        {
+                            <div class="no-selection">
+                                <p>Wähle einen Block aus der Liste.</p>
+                                <p>Ziehe Blöcke per Drag & Drop, um die Reihenfolge zu ändern.</p>
                             </div>
-                            <div class="form-group color-picker-group">
-                                <label for="accentColor">Akzentfarbe</label>
-                                <div class="color-input-wrapper">
-                                    <input type="color" id="accentColor" @bind="data.AccentColor" />
-                                    <input type="text" @bind="data.AccentColor" class="color-text" />
-                                </div>
-                            </div>
-                            <div class="form-group color-picker-group">
-                                <label for="backgroundColor">Hintergrund</label>
-                                <div class="color-input-wrapper">
-                                    <input type="color" id="backgroundColor" @bind="data.BackgroundColor" />
-                                    <input type="text" @bind="data.BackgroundColor" class="color-text" />
-                                </div>
-                            </div>
-                        </div>
+                        }
                     </div>
                 </div>
 
                 <div class="nav-buttons">
                     <div></div>
-                    <button class="btn btn-primary btn-large" @onclick="GoToPreview">
-                        Weiter zur Vorschau <span class="icon">→</span>
+                    <button class="btn btn-primary btn-large" @onclick="() => GoToPhase(1)">
+                        Weiter zur Eingabe <span class="icon">→</span>
                     </button>
                 </div>
             </div>
         }
-        else if (currentPhase == 2)
+
+        @* ═══════════════ PHASE 1: EINGABE ═══════════════ *@
+        @if (currentPhase == 1)
         {
-            <!-- Phase 2: Preview -->
-            <div class="preview-phase">
+            <div class="phase-content input-phase">
+                <div class="toolbar">
+                    <button class="btn btn-secondary" @onclick="LoadDemo">
+                        <span class="icon">📋</span> Demo
+                    </button>
+                    <button class="btn btn-secondary" @onclick="ResetArticle">
+                        <span class="icon">🗑️</span> Zurücksetzen
+                    </button>
+                    <button class="btn btn-secondary" @onclick="CopyJsonSchema">
+                        <span class="icon">🤖</span> JSON-Schema
+                    </button>
+                    <button class="btn btn-secondary" @onclick="ExportArticle">
+                        <span class="icon">📤</span> Export
+                    </button>
+                    <label class="btn btn-secondary">
+                        <span class="icon">📥</span> Import
+                        <InputFile OnChange="ImportArticle" accept=".json" style="display: none;" />
+                    </label>
+                </div>
+
+                <div class="form-grid">
+                    @* Header Section *@
+                    <div class="form-section">
+                        <h2>📌 Header</h2>
+                        <div class="form-group">
+                            <label>Titel</label>
+                            <input type="text" @bind="article.Title" placeholder="Produktname" />
+                        </div>
+                        <div class="form-group">
+                            <label>Untertitel</label>
+                            <input type="text" @bind="article.Subtitle" placeholder="Kurzbeschreibung │ Artikelnummer" />
+                        </div>
+                    </div>
+
+                    @* Mobile Summary *@
+                    <div class="form-section">
+                        <h2>📱 Mobile Summary</h2>
+                        <div class="form-group">
+                            <label>Zusammenfassung (max. 800 Zeichen)</label>
+                            <textarea @bind="article.MobileSummary" rows="3" 
+                                      placeholder="Kurze Produktbeschreibung für Mobile..."></textarea>
+                            <span class="char-count @(article.MobileSummary?.Length > 800 ? "over-limit" : "")">
+                                @(article.MobileSummary?.Length ?? 0) / 800
+                            </span>
+                        </div>
+                    </div>
+
+                    @* Dynamic Blocks *@
+                    @foreach (var block in currentLayout.Blocks.OrderBy(b => b.Order))
+                    {
+                        <div class="form-section">
+                            <div class="section-header">
+                                <h2>@block.Icon @block.Title</h2>
+                                <button class="btn-clear" @onclick="() => ClearBlock(block.Id)" title="Löschen">×</button>
+                            </div>
+                            <div class="form-group">
+                                <label>@block.Type.GetInputLabel()</label>
+                                @if (block.Type == BlockType.Image)
+                                {
+                                    <div class="input-with-button">
+                                        <input type="text" value="@article.GetBlockContent(block.Id)" 
+                                               @onchange="e => SetContent(block.Id, e)" placeholder="https://..." />
+                                        <label class="btn btn-accent">
+                                            <span class="icon">📷</span>
+                                            <InputFile OnChange="e => UploadImage(e, block.Id)" accept="image/*" style="display: none;" />
+                                        </label>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(article.GetBlockContent(block.Id)))
+                                    {
+                                        <div class="image-preview">
+                                            <img src="@article.GetBlockContent(block.Id)" alt="Vorschau" />
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <textarea value="@article.GetBlockContent(block.Id)"
+                                              @onchange="e => SetContent(block.Id, e)"
+                                              rows="@GetTextareaRows(block.Type)"
+                                              placeholder="@block.Type.GetInputPlaceholder()"></textarea>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @* Footer *@
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h2>🏷️ Fußzeile</h2>
+                            <button class="btn-clear" @onclick="() => article.Footer = string.Empty" title="Löschen">×</button>
+                        </div>
+                        <div class="form-group">
+                            <label>Pro Zeile ein Eintrag, max. 4 Zeilen (Format: Label: Wert)</label>
+                            <textarea @bind="article.Footer" rows="4" 
+                                      placeholder="SKU: ABC123&#10;Farbe: Schwarz&#10;Garantie: 2 Jahre"></textarea>
+                            <span class="char-count @(GetFooterLines() > 4 ? "over-limit" : "")">
+                                @GetFooterLines() / 4 Zeilen
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary btn-large" @onclick="() => GoToPhase(0)">
+                        <span class="icon">←</span> Layout
+                    </button>
+                    <button class="btn btn-primary btn-large" @onclick="() => GoToPhase(2)">
+                        Vorschau <span class="icon">→</span>
+                    </button>
+                </div>
+            </div>
+        }
+
+        @* ═══════════════ PHASE 2: VORSCHAU ═══════════════ *@
+        @if (currentPhase == 2)
+        {
+            <div class="phase-content preview-phase">
                 <div class="preview-container">
                     <div class="preview-frame">
                         @((MarkupString)generatedHtml)
@@ -246,37 +378,38 @@ EAN: 1234567890123"></textarea>
                 </div>
 
                 <div class="nav-buttons">
-                    <button class="btn btn-secondary btn-large" @onclick="GoToInput">
-                        <span class="icon">←</span> Zurück zur Eingabe
+                    <button class="btn btn-secondary btn-large" @onclick="() => GoToPhase(1)">
+                        <span class="icon">←</span> Eingabe
                     </button>
-                    <button class="btn btn-primary btn-large" @onclick="GoToHtml">
-                        Weiter zum HTML <span class="icon">→</span>
+                    <button class="btn btn-primary btn-large" @onclick="() => GoToPhase(3)">
+                        HTML <span class="icon">→</span>
                     </button>
                 </div>
             </div>
         }
-        else if (currentPhase == 3)
+
+        @* ═══════════════ PHASE 3: HTML ═══════════════ *@
+        @if (currentPhase == 3)
         {
-            <!-- Phase 3: HTML -->
-            <div class="html-phase">
+            <div class="phase-content html-phase">
                 <div class="html-container">
                     <div class="html-toolbar">
                         <button class="btn btn-primary" @onclick="CopyHtml">
-                            <span class="icon">📋</span> In Zwischenablage kopieren
+                            <span class="icon">📋</span> Kopieren
                         </button>
                         <button class="btn btn-accent" @onclick="DownloadHtml">
-                            <span class="icon">💾</span> Als Datei herunterladen
+                            <span class="icon">💾</span> Herunterladen
                         </button>
                     </div>
                     <pre class="html-code"><code>@generatedHtml</code></pre>
                 </div>
 
                 <div class="nav-buttons">
-                    <button class="btn btn-secondary btn-large" @onclick="GoToPreview">
-                        <span class="icon">←</span> Zurück zur Vorschau
+                    <button class="btn btn-secondary btn-large" @onclick="() => GoToPhase(2)">
+                        <span class="icon">←</span> Vorschau
                     </button>
-                    <button class="btn btn-secondary btn-large" @onclick="GoToInput">
-                        <span class="icon">🔄</span> Neue Vorlage erstellen
+                    <button class="btn btn-secondary btn-large" @onclick="() => GoToPhase(1)">
+                        <span class="icon">🔄</span> Neuer Artikel
                     </button>
                 </div>
             </div>
@@ -284,254 +417,480 @@ EAN: 1234567890123"></textarea>
     </main>
 </div>
 
-@if (showCopyNotification)
+@* ═══════════════ DIALOGE ═══════════════ *@
+
+@* Block hinzufügen *@
+@if (showAddBlockDialog)
 {
-    <div class="notification @(copySuccess ? "success" : "error")">
-        @notificationMessage
+    <div class="modal-overlay" @onclick="() => showAddBlockDialog = false">
+        <div class="modal-dialog" @onclick:stopPropagation>
+            <h3>Block hinzufügen</h3>
+            <div class="block-type-list">
+                @foreach (BlockType t in Enum.GetValues<BlockType>())
+                {
+                    <button class="block-type-btn" @onclick="() => AddBlock(t)">
+                        <span class="icon">@t.GetDefaultIcon()</span>
+                        <span class="name">@t.GetDisplayName()</span>
+                    </button>
+                }
+            </div>
+            <button class="btn btn-secondary" @onclick="() => showAddBlockDialog = false">Abbrechen</button>
+        </div>
     </div>
 }
 
-@code {
-    private TemplateData data = new();
-    private SectionTitles sectionTitles = new();
-    private int currentPhase = 1;
-    private string generatedHtml = string.Empty;
-    private bool isSaving = false;
-    private DateTime? lastSaved;
-    private bool showCopyNotification = false;
-    private bool copySuccess = false;
-    private string notificationMessage = "";
-    private System.Threading.Timer? autoSaveTimer;
+@* Import-Konflikt *@
+@if (showImportConflict)
+{
+    <div class="modal-overlay" @onclick="() => showImportConflict = false">
+        <div class="modal-dialog" @onclick:stopPropagation>
+            <h3>⚠️ Layout-Konflikt</h3>
+            <p>Das importierte Layout unterscheidet sich vom aktuellen.</p>
+            <p><strong>Aktuell:</strong> @currentLayout.Name (@currentLayout.Blocks.Count Blöcke)</p>
+            <p><strong>Import:</strong> @importedArticle?.Layout?.Name (@importedArticle?.Layout?.Blocks.Count Blöcke)</p>
+            
+            <div class="modal-actions">
+                <button class="btn btn-primary" @onclick="ImportWithNewLayout">Layout übernehmen</button>
+                <button class="btn btn-secondary" @onclick="ImportKeepLayout">Daten einpassen</button>
+                <button class="btn btn-secondary" @onclick="() => showImportConflict = false">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+}
 
+@* Notification *@
+@if (!string.IsNullOrEmpty(notification))
+{
+    <div class="notification @(notificationSuccess ? "success" : "error")">@notification</div>
+}
+
+@code {
+    // ═══════════════ STATE ═══════════════
+    private int currentPhase = 0;
+    private List<LayoutTemplate> layouts = new();
+    private string selectedLayoutId = "standard";
+    private LayoutTemplate currentLayout = LayoutTemplate.CreateStandard();
+    private string? selectedBlockId;
+    private BlockDefinition? selectedBlock => currentLayout.Blocks.FirstOrDefault(b => b.Id == selectedBlockId);
+    
+    private ArticleData article = new();
+    private string generatedHtml = "";
+    
+    // Dialogs
+    private bool showAddBlockDialog;
+    private bool showImportConflict;
+    private ArticleData? importedArticle;
+    
+    // Notifications
+    private string notification = "";
+    private bool notificationSuccess;
+    
+    // SortableJS
+    private DotNetObjectReference<Index>? dotNetHelper;
+    
+    // UI Data
+    private readonly string[] availableIcons = { "🖼️", "📝", "✦", "⚙", "🔧", "📦", "💡", "⭐", "🎯", "📊", "🔍", "⚡", "🛠️", "📐", "🎨", "📋" };
+    private readonly string[] availableBullets = { "✓", "•", "▸", "★", "►", "◆", "→", "▪" };
+
+    // ═══════════════ LIFECYCLE ═══════════════
     protected override async Task OnInitializedAsync()
     {
-        // Load from LocalStorage
-        try
-        {
-            var savedData = await LocalStorage.GetItemAsync<TemplateData>("relexx-template-data");
-            if (savedData != null)
-            {
-                data = savedData;
-            }
-        }
-        catch { }
-
-        // Start autosave timer (every 10 seconds)
-        autoSaveTimer = new System.Threading.Timer(async _ =>
-        {
-            await InvokeAsync(async () =>
-            {
-                await SaveToLocalStorage();
-                StateHasChanged();
-            });
-        }, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
+        await LoadLayouts();
+        await LoadArticle();
     }
 
-    private async Task SaveToLocalStorage()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (currentPhase == 0)
+        {
+            await InitSortable();
+        }
+    }
+
+    private async Task InitSortable()
+    {
+        dotNetHelper ??= DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("initSortable", "block-list", dotNetHelper);
+    }
+
+    [JSInvokable]
+    public async Task OnBlockReordered(int oldIndex, int newIndex)
+    {
+        if (oldIndex == newIndex) return;
+        
+        var orderedBlocks = currentLayout.Blocks.OrderBy(b => b.Order).ToList();
+        var movedBlock = orderedBlocks[oldIndex];
+        orderedBlocks.RemoveAt(oldIndex);
+        orderedBlocks.Insert(newIndex, movedBlock);
+        
+        for (int i = 0; i < orderedBlocks.Count; i++)
+        {
+            orderedBlocks[i].Order = i;
+        }
+        
+        currentLayout.Blocks = orderedBlocks;
+        await SaveLayouts();
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await JS.InvokeVoidAsync("destroySortable", "block-list");
+        dotNetHelper?.Dispose();
+    }
+
+    // ═══════════════ LAYOUT MANAGEMENT ═══════════════
+    private async Task LoadLayouts()
     {
         try
         {
-            isSaving = true;
-            StateHasChanged();
-            await LocalStorage.SetItemAsync("relexx-template-data", data);
-            lastSaved = DateTime.Now;
-            isSaving = false;
+            var saved = await LocalStorage.GetItemAsync<List<LayoutTemplate>>("relexx-layouts");
+            layouts = saved ?? new();
+            if (!layouts.Any(l => l.IsDefault))
+                layouts.Insert(0, LayoutTemplate.CreateStandard());
+            
+            currentLayout = layouts.FirstOrDefault(l => l.Id == selectedLayoutId) ?? layouts.First();
+            selectedLayoutId = currentLayout.Id;
         }
-        catch { isSaving = false; }
+        catch
+        {
+            layouts = new() { LayoutTemplate.CreateStandard() };
+            currentLayout = layouts.First();
+        }
+    }
+
+    private async Task SaveLayouts()
+    {
+        currentLayout.ModifiedAt = DateTime.UtcNow;
+        await LocalStorage.SetItemAsync("relexx-layouts", layouts);
+    }
+
+    private async Task OnLayoutSelected()
+    {
+        currentLayout = layouts.FirstOrDefault(l => l.Id == selectedLayoutId) ?? layouts.First();
+        selectedBlockId = null;
+        article.Layout = currentLayout;
+        await InitSortable();
+    }
+
+    private async Task CreateNewLayout()
+    {
+        var newLayout = new LayoutTemplate
+        {
+            Name = "Neues Layout",
+            Blocks = new() { BlockDefinition.CreateDefault(BlockType.Image), BlockDefinition.CreateDefault(BlockType.RichText, 1) }
+        };
+        layouts.Add(newLayout);
+        selectedLayoutId = newLayout.Id;
+        currentLayout = newLayout;
+        selectedBlockId = null;
+        await SaveLayouts();
+    }
+
+    private async Task DuplicateLayout()
+    {
+        var copy = currentLayout.Clone();
+        layouts.Add(copy);
+        selectedLayoutId = copy.Id;
+        currentLayout = copy;
+        selectedBlockId = null;
+        await SaveLayouts();
+    }
+
+    private async Task DeleteLayout()
+    {
+        if (currentLayout.IsDefault || layouts.Count <= 1) return;
+        layouts.Remove(currentLayout);
+        currentLayout = layouts.First();
+        selectedLayoutId = currentLayout.Id;
+        selectedBlockId = null;
+        await SaveLayouts();
+    }
+
+    private async Task ExportLayout()
+    {
+        var json = JsonSerializer.Serialize(currentLayout, new JsonSerializerOptions { WriteIndented = true });
+        await JS.InvokeVoidAsync("downloadFile", $"layout-{currentLayout.Name}_{DateTime.Now:yyyy-MM-dd_HHmm}.json", "application/json", json);
+    }
+
+    private async Task ImportLayout(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            using var stream = e.File.OpenReadStream();
+            var imported = await JsonSerializer.DeserializeAsync<LayoutTemplate>(stream);
+            if (imported != null)
+            {
+                imported.Id = Guid.NewGuid().ToString("N")[..8];
+                imported.IsDefault = false;
+                layouts.Add(imported);
+                selectedLayoutId = imported.Id;
+                currentLayout = imported;
+                await SaveLayouts();
+                await Notify("✓ Layout importiert!", true);
+            }
+        }
+        catch (Exception ex) { await Notify($"Fehler: {ex.Message}", false); }
+    }
+
+    // ═══════════════ BLOCK MANAGEMENT ═══════════════
+    private void SelectBlock(BlockDefinition block) => selectedBlockId = block.Id;
+    private void ShowAddBlockDialog() => showAddBlockDialog = true;
+
+    private async Task AddBlock(BlockType type)
+    {
+        var order = currentLayout.Blocks.Any() ? currentLayout.Blocks.Max(b => b.Order) + 1 : 0;
+        var block = BlockDefinition.CreateDefault(type, order);
+        currentLayout.Blocks.Add(block);
+        selectedBlockId = block.Id;
+        showAddBlockDialog = false;
+        await SaveLayouts();
+        await InitSortable();
+    }
+
+    private async Task DeleteBlock()
+    {
+        if (selectedBlock == null) return;
+        currentLayout.Blocks.Remove(selectedBlock);
+        currentLayout.ReorderBlocks();
+        selectedBlockId = null;
+        await SaveLayouts();
+        await InitSortable();
+    }
+
+    private async Task OnBlockTypeChanged()
+    {
+        if (selectedBlock == null) return;
+        selectedBlock.Options = BlockOptions.CreateDefault(selectedBlock.Type);
+        selectedBlock.Icon = selectedBlock.Type.GetDefaultIcon();
+        selectedBlock.Title = selectedBlock.Type.GetDefaultTitle();
+        await SaveLayouts();
+    }
+
+    private async Task SetBlockIcon(string icon)
+    {
+        if (selectedBlock != null) { selectedBlock.Icon = icon; await SaveLayouts(); }
+    }
+
+    private async Task SetBullet(string bullet)
+    {
+        if (selectedBlock != null) { selectedBlock.Options.BulletChar = bullet; await SaveLayouts(); }
+    }
+
+    // ═══════════════ ARTICLE MANAGEMENT ═══════════════
+    private async Task LoadArticle()
+    {
+        try
+        {
+            var saved = await LocalStorage.GetItemAsync<ArticleData>("relexx-article");
+            if (saved != null)
+            {
+                article = saved;
+                if (layouts.Any(l => l.Id == article.Layout?.Id))
+                {
+                    selectedLayoutId = article.Layout!.Id;
+                    currentLayout = layouts.First(l => l.Id == article.Layout.Id);
+                }
+            }
+            else article = new() { Layout = currentLayout };
+        }
+        catch { article = new() { Layout = currentLayout }; }
+    }
+
+    private async Task SaveArticle()
+    {
+        article.Layout = currentLayout;
+        article.ModifiedAt = DateTime.UtcNow;
+        await LocalStorage.SetItemAsync("relexx-article", article);
     }
 
     private void LoadDemo()
     {
-        data = TemplateData.GetDemoData();
-        sectionTitles = new SectionTitles();
-    }
-
-    private void ResetAll()
-    {
-        data = new TemplateData();
-        sectionTitles = new SectionTitles();
-    }
-
-    private int GetFooterLineCount()
-    {
-        if (string.IsNullOrWhiteSpace(data.Footer)) return 0;
-        return data.Footer.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length;
-    }
-
-    private void ValidateFooter()
-    {
-        if (string.IsNullOrWhiteSpace(data.Footer)) return;
-        
-        var lines = data.Footer.Split('\n');
-        if (lines.Length > 4)
+        // Dynamisch Demo-Daten für jeden Block im aktuellen Layout generieren
+        article = new ArticleData
         {
-            data.Footer = string.Join('\n', lines.Take(4));
-        }
-    }
-
-    private async Task SaveColorScheme()
-    {
-        var scheme = new ColorScheme
-        {
-            PrimaryColor = data.PrimaryColor,
-            AccentColor = data.AccentColor,
-            BackgroundColor = data.BackgroundColor
+            Title = "Premium Produkt XYZ-3000",
+            Subtitle = "Hochwertige Qualität │ Art.-Nr. XYZ-3000-BK",
+            MobileSummary = "Das Premium Produkt XYZ-3000 überzeugt durch erstklassige Verarbeitung und innovative Features. Perfekt geeignet für anspruchsvolle Anwender, die Wert auf Qualität legen.",
+            Footer = "SKU: XYZ-3000-BK\nFarbe: Schwarz\nGarantie: 2 Jahre",
+            Layout = currentLayout
         };
-        await LocalStorage.SetItemAsync("relexx-color-scheme", scheme);
-        await ShowNotification("✓ Farbschema als Standard gespeichert!", true);
-    }
 
-    private async Task LoadColorScheme()
-    {
-        try
+        foreach (var block in currentLayout.Blocks)
         {
-            var scheme = await LocalStorage.GetItemAsync<ColorScheme>("relexx-color-scheme");
-            if (scheme != null)
+            var demoContent = block.Type switch
             {
-                data.PrimaryColor = scheme.PrimaryColor;
-                data.AccentColor = scheme.AccentColor;
-                data.BackgroundColor = scheme.BackgroundColor;
-                await ShowNotification("✓ Standard-Farbschema geladen!", true);
-            }
-            else
-            {
-                await ShowNotification("Kein gespeichertes Farbschema gefunden.", false);
-            }
-        }
-        catch
-        {
-            await ShowNotification("Fehler beim Laden des Farbschemas.", false);
+                BlockType.Image => "https://placehold.co/600x400/1a1a1a/f5c518?text=Produktbild",
+                BlockType.RichText => $"**{block.Title}** bietet herausragende Qualität und durchdachte Features.\n\nDie hochwertige Verarbeitung garantiert langlebige Zuverlässigkeit für den täglichen Einsatz.",
+                BlockType.KeyValueGrid => "Premium Qualität | Erstklassige Materialien und Verarbeitung\nInnovatives Design | Moderne Optik trifft Funktionalität\nEinfache Bedienung | Intuitive Handhabung für jeden\nLanglebigkeit | Robust und zuverlässig",
+                BlockType.DataTable => "Material | Aluminium / Kunststoff\nAbmessungen | 250 × 150 × 80 mm\nGewicht | 450 g\nFarbe | Schwarz\nAnschlüsse | USB-C, HDMI",
+                BlockType.FeatureCards => "Typ A | Standard │ Premium │ Pro\nTyp B | Basic │ Advanced",
+                BlockType.CheckList => "1× Hauptgerät\n1× USB-C Kabel\n1× Kurzanleitung\n1× Garantiekarte",
+                _ => ""
+            };
+            article.SetBlockContent(block.Id, demoContent);
         }
     }
 
-    private async Task ShowNotification(string message, bool success)
+    private void ResetArticle() => article = new() { Layout = currentLayout };
+
+    private void SetContent(string blockId, ChangeEventArgs e)
     {
-        notificationMessage = message;
-        copySuccess = success;
-        showCopyNotification = true;
-        StateHasChanged();
-        
-        await Task.Delay(3000);
-        showCopyNotification = false;
-        StateHasChanged();
+        article.SetBlockContent(blockId, e.Value?.ToString() ?? "");
     }
 
-    private async Task CopyJsonSchema()
-    {
-        var schema = @"{
-  ""$schema"": ""Eingabedaten für relexx' Template Generator"",
-  ""description"": ""Kopiere dieses JSON und fülle die Felder aus. Das Ergebnis kann direkt in den Template Generator importiert werden."",
-  ""Title"": ""Produktname (Hauptüberschrift)"",
-  ""Subtitle"": ""Kurzbeschreibung │ Artikelnummer │ Kategorie"",
-  ""ImageUrl"": ""https://beispiel.de/bild.jpg (HTTPS-URL oder leer lassen)"",
-  ""MobileSummary"": ""Kurze Zusammenfassung für mobile Vorschau und Google Shopping. Maximal 800 Zeichen, nur Plain-Text."",
-  ""Description"": ""Ausführliche Produktbeschreibung. **Markdown** wird unterstützt für *Hervorhebungen*."",
-  ""Highlights"": ""Titel1 | Beschreibung1\nTitel2 | Beschreibung2\nTitel3 | Beschreibung3"",
-  ""TechnicalData"": ""Spezifikation1 | Wert1\nSpezifikation2 | Wert2\nSpezifikation3 | Wert3"",
-  ""Compatibility"": ""Plattform1 | Variante1 │ Variante2\nPlattform2 | Variante3 │ Variante4"",
-  ""DeliveryScope"": ""Artikel 1\nArtikel 2\nArtikel 3"",
-  ""Footer"": ""Label1: Wert1\nLabel2: Wert2\nLabel3: Wert3"",
-  ""PrimaryColor"": ""#1a1a1a"",
-  ""AccentColor"": ""#f5c518"",
-  ""BackgroundColor"": ""#f8f9fa""
-}";
-        
-        await CopyToClipboard(schema, "✓ JSON-Schema in Zwischenablage kopiert!");
-    }
+    private void ClearBlock(string blockId) => article.ClearBlockContent(blockId);
 
-    private async Task CopyToClipboard(string text, string successMessage)
-    {
-        try
-        {
-            await JS.InvokeVoidAsync("navigator.clipboard.writeText", text);
-            await ShowNotification(successMessage, true);
-        }
-        catch
-        {
-            await ShowNotification("✗ Kopieren fehlgeschlagen", false);
-        }
-    }
-
-    private async Task ExportJson()
-    {
-        var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
-        var fileName = $"ebay-template-{DateTime.Now:yyyy-MM-dd-HHmmss}.json";
-        await JS.InvokeVoidAsync("downloadFile", fileName, "application/json", json);
-    }
-
-    private async Task ImportJson(InputFileChangeEventArgs e)
-    {
-        try
-        {
-            var file = e.File;
-            using var stream = file.OpenReadStream(maxAllowedSize: 1024 * 1024);
-            var importedData = await JsonSerializer.DeserializeAsync<TemplateData>(stream);
-            if (importedData != null)
-            {
-                data = importedData;
-                StateHasChanged();
-            }
-        }
-        catch (Exception ex)
-        {
-            await JS.InvokeVoidAsync("alert", $"Import fehlgeschlagen: {ex.Message}");
-        }
-    }
-
-    private async Task UploadImage(InputFileChangeEventArgs e)
+    private async Task UploadImage(InputFileChangeEventArgs e, string blockId)
     {
         try
         {
             var file = e.File;
             if (file.Size > 5 * 1024 * 1024)
             {
-                await JS.InvokeVoidAsync("alert", "Bild zu groß! Maximum: 5 MB");
+                await Notify("Bild zu groß (max. 5 MB)", false);
                 return;
             }
-
-            using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            using var stream = file.OpenReadStream(5 * 1024 * 1024);
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
             var base64 = Convert.ToBase64String(ms.ToArray());
-            var mimeType = file.ContentType;
-            data.ImageUrl = $"data:{mimeType};base64,{base64}";
+            article.SetBlockContent(blockId, $"data:{file.ContentType};base64,{base64}");
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            await JS.InvokeVoidAsync("alert", $"Upload fehlgeschlagen: {ex.Message}");
+            await Notify($"Upload fehlgeschlagen: {ex.Message}", false);
         }
     }
 
-    private void GoToPreview()
+    private async Task ExportArticle()
     {
-        generatedHtml = TemplateGenerator.GenerateHtml(data, sectionTitles);
-        currentPhase = 2;
+        article.Layout = currentLayout;
+        var json = JsonSerializer.Serialize(article, new JsonSerializerOptions { WriteIndented = true });
+        await JS.InvokeVoidAsync("downloadFile", article.GenerateFileName(), "application/json", json);
     }
 
-    private void GoToInput()
+    private async Task ImportArticle(InputFileChangeEventArgs e)
     {
-        currentPhase = 1;
+        try
+        {
+            using var stream = e.File.OpenReadStream(10 * 1024 * 1024);
+            importedArticle = await JsonSerializer.DeserializeAsync<ArticleData>(stream);
+            if (importedArticle == null) return;
+            
+            if (!currentLayout.IsCompatibleWith(importedArticle.Layout))
+            {
+                showImportConflict = true;
+            }
+            else
+            {
+                article = importedArticle;
+                article.Layout = currentLayout;
+                await Notify("✓ Artikel importiert!", true);
+            }
+        }
+        catch (Exception ex)
+        {
+            await Notify($"Import fehlgeschlagen: {ex.Message}", false);
+        }
     }
 
-    private void GoToHtml()
+    private async Task ImportWithNewLayout()
     {
-        currentPhase = 3;
+        if (importedArticle?.Layout == null) return;
+        
+        if (!layouts.Any(l => l.Id == importedArticle.Layout.Id))
+        {
+            importedArticle.Layout.IsDefault = false;
+            layouts.Add(importedArticle.Layout);
+            await SaveLayouts();
+        }
+        
+        selectedLayoutId = importedArticle.Layout.Id;
+        currentLayout = importedArticle.Layout;
+        article = importedArticle;
+        showImportConflict = false;
+        await Notify("✓ Artikel mit Layout importiert!", true);
+    }
+
+    private async Task ImportKeepLayout()
+    {
+        if (importedArticle == null) return;
+        
+        article.Title = importedArticle.Title;
+        article.Subtitle = importedArticle.Subtitle;
+        article.MobileSummary = importedArticle.MobileSummary;
+        article.Footer = importedArticle.Footer;
+        
+        foreach (var block in currentLayout.Blocks)
+        {
+            if (importedArticle.BlockContents.TryGetValue(block.Id, out var content))
+                article.SetBlockContent(block.Id, content);
+        }
+        
+        showImportConflict = false;
+        await Notify("✓ Daten importiert", true);
+    }
+
+    private async Task CopyJsonSchema()
+    {
+        var schema = ArticleData.GenerateJsonSchema(currentLayout);
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", schema);
+        await Notify("✓ JSON-Schema kopiert!", true);
+    }
+
+    // ═══════════════ HTML GENERATION ═══════════════
+    private async Task GoToPhase(int phase)
+    {
+        if (phase >= 2)
+        {
+            article.Layout = currentLayout;
+            generatedHtml = TemplateGenerator.GenerateHtml(article);
+        }
+        currentPhase = phase;
+        await SaveArticle();
+        
+        if (phase == 0)
+        {
+            await Task.Delay(50); // Wait for DOM
+            await InitSortable();
+        }
     }
 
     private async Task CopyHtml()
     {
-        await CopyToClipboard(generatedHtml, "✓ HTML in Zwischenablage kopiert!");
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", generatedHtml);
+            await Notify("✓ HTML kopiert!", true);
+        }
+        catch { await Notify("Kopieren fehlgeschlagen", false); }
     }
 
     private async Task DownloadHtml()
     {
-        var fileName = $"ebay-template-{DateTime.Now:yyyy-MM-dd-HHmmss}.html";
-        await JS.InvokeVoidAsync("downloadFile", fileName, "text/html", generatedHtml);
+        await JS.InvokeVoidAsync("downloadFile", article.GenerateFileName("html"), "text/html", generatedHtml);
     }
 
-    public void Dispose()
+    // ═══════════════ HELPERS ═══════════════
+    private string GetPhaseName(int phase) => phase switch { 0 => "Layout", 1 => "Eingabe", 2 => "Vorschau", _ => "HTML" };
+    
+    private int GetFooterLines() => string.IsNullOrWhiteSpace(article.Footer) ? 0 : article.Footer.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length;
+    
+    private int GetTextareaRows(BlockType type) => type switch
     {
-        autoSaveTimer?.Dispose();
+        BlockType.RichText => 6, BlockType.KeyValueGrid => 7, BlockType.DataTable => 8,
+        BlockType.FeatureCards => 3, BlockType.CheckList => 5, _ => 4
+    };
+
+    private async Task Notify(string msg, bool success)
+    {
+        notification = msg;
+        notificationSuccess = success;
+        StateHasChanged();
+        await Task.Delay(3000);
+        notification = "";
+        StateHasChanged();
     }
 }
