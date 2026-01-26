@@ -18,11 +18,10 @@
         </div>
         
         <div class="phase-indicator">
-            @for (int i = 0; i <= 3; i++)
+            @for (var i = 0; i <= 3; i++)
             {
                 var phase = i;
-                <div class="phase @(currentPhase == phase ? "active" : currentPhase > phase ? "completed" : "")" 
-                     @onclick="() => GoToPhase(phase)">
+                <div class="phase @GetPhaseClass(phase)" @onclick="() => GoToPhase(phase)">
                     <span class="phase-number">@phase</span>
                     <span class="phase-label">@GetPhaseName(phase)</span>
                 </div>
@@ -35,462 +34,48 @@
     </header>
 
     <main class="app-main">
-        @* ═══════════════ PHASE 0: LAYOUT ═══════════════ *@
-        @if (currentPhase == 0)
+        @switch (currentPhase)
         {
-            <div class="phase-content layout-phase">
-                <div class="toolbar">
-                    <select class="layout-select" @bind="selectedLayoutId" @bind:after="OnLayoutSelected">
-                        @foreach (var l in layouts)
-                        {
-                            <option value="@l.Id">@l.Name @(l.IsDefault ? "(Standard)" : "")</option>
-                        }
-                    </select>
-                    <button class="btn btn-secondary" @onclick="CreateNewLayout" title="Neues Layout erstellen">
-                        <span class="icon">➕</span> Neu
-                    </button>
-                    <button class="btn btn-secondary" @onclick="DuplicateLayout" title="Layout duplizieren">
-                        <span class="icon">📋</span> Duplizieren
-                    </button>
-                    <button class="btn btn-secondary" @onclick="ExportLayout" title="Layout exportieren">
-                        <span class="icon">📤</span> Export
-                    </button>
-                    <label class="btn btn-secondary" title="Layout importieren">
-                        <span class="icon">📥</span> Import
-                        <InputFile OnChange="ImportLayout" accept=".json" style="display: none;" />
-                    </label>
-                    <button class="btn btn-danger" @onclick="DeleteLayout" 
-                            disabled="@(currentLayout.IsDefault || layouts.Count <= 1)" 
-                            title="Layout löschen">
-                        <span class="icon">🗑️</span>
-                    </button>
-                </div>
-
-                <div class="layout-editor">
-                    @* ─── Linke Spalte: Block-Liste ─── *@
-                    <div class="layout-sidebar">
-                        <div class="sidebar-section">
-                            <label>Layout-Name</label>
-                            <input type="text" @bind="currentLayout.Name" @bind:after="SaveLayouts" 
-                                   disabled="@currentLayout.IsDefault" placeholder="Layout-Name" />
-                        </div>
-
-                        <div class="sidebar-section">
-                            <div class="section-header">
-                                <h3>Blöcke</h3>
-                                <button class="btn btn-small btn-accent" @onclick="ShowAddBlockDialog">
-                                    <span class="icon">➕</span>
-                                </button>
-                            </div>
-                            <div class="block-list" id="block-list">
-                                @foreach (var block in currentLayout.Blocks.OrderBy(b => b.Order))
-                                {
-                                    <div class="block-item @(selectedBlockId == block.Id ? "selected" : "")"
-                                         data-id="@block.Id"
-                                         @onclick="() => SelectBlock(block)">
-                                        <span class="drag-handle">☰</span>
-                                        <span class="block-icon">@block.Icon</span>
-                                        <span class="block-title">@block.Title</span>
-                                        <span class="block-type">@block.Type.GetDisplayName()</span>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-
-                        <div class="sidebar-section">
-                            <h3>🎨 Farbschema</h3>
-                            <div class="color-row">
-                                <label>Primär</label>
-                                <input type="color" @bind="currentLayout.Colors.PrimaryColor" @bind:after="SaveLayouts" />
-                                <input type="text" class="color-text" @bind="currentLayout.Colors.PrimaryColor" @bind:after="SaveLayouts" />
-                            </div>
-                            <div class="color-row">
-                                <label>Akzent</label>
-                                <input type="color" @bind="currentLayout.Colors.AccentColor" @bind:after="SaveLayouts" />
-                                <input type="text" class="color-text" @bind="currentLayout.Colors.AccentColor" @bind:after="SaveLayouts" />
-                            </div>
-                            <div class="color-row">
-                                <label>Hintergrund</label>
-                                <input type="color" @bind="currentLayout.Colors.BackgroundColor" @bind:after="SaveLayouts" />
-                                <input type="text" class="color-text" @bind="currentLayout.Colors.BackgroundColor" @bind:after="SaveLayouts" />
-                            </div>
-                        </div>
-                    </div>
-
-                    @* ─── Rechte Spalte: Block-Editor ─── *@
-                    <div class="block-editor">
-                        @if (selectedBlock != null)
-                        {
-                            <h3>Block bearbeiten</h3>
-                            
-                            <div class="editor-group">
-                                <label>Block-Typ</label>
-                                <select @bind="selectedBlock.Type" @bind:after="OnBlockTypeChanged">
-                                    @foreach (BlockType t in Enum.GetValues<BlockType>())
-                                    {
-                                        <option value="@t">@t.GetDisplayName()</option>
-                                    }
-                                </select>
-                            </div>
-
-                            <div class="editor-group">
-                                <label>Icon</label>
-                                <div class="icon-picker">
-                                    @foreach (var icon in availableIcons)
-                                    {
-                                        <button type="button" class="icon-btn @(selectedBlock.Icon == icon ? "selected" : "")"
-                                                @onclick="() => SetBlockIcon(icon)">@icon</button>
-                                    }
-                                </div>
-                            </div>
-
-                            <div class="editor-group">
-                                <label>Überschrift</label>
-                                <input type="text" @bind="selectedBlock.Title" @bind:after="SaveLayouts" />
-                            </div>
-
-                            @* Typ-spezifische Optionen *@
-                            @if (selectedBlock.Type == BlockType.KeyValueGrid)
-                            {
-                                <div class="editor-group">
-                                    <label>Spalten</label>
-                                    <select @bind="selectedBlock.Options.Columns" @bind:after="SaveLayouts">
-                                        <option value="1">1 Spalte</option>
-                                        <option value="2">2 Spalten</option>
-                                        <option value="3">3 Spalten</option>
-                                    </select>
-                                </div>
-                                <div class="editor-group">
-                                    <label>Aufzählungszeichen</label>
-                                    <div class="bullet-picker">
-                                        @foreach (var b in availableBullets)
-                                        {
-                                            <button type="button" class="bullet-btn @(selectedBlock.Options.BulletChar == b ? "selected" : "")"
-                                                    @onclick="() => SetBullet(b)">@b</button>
-                                        }
-                                    </div>
-                                </div>
-                            }
-
-                            @if (selectedBlock.Type == BlockType.DataTable)
-                            {
-                                <div class="editor-group">
-                                    <label>Spalte 1</label>
-                                    <input type="text" @bind="selectedBlock.Options.Column1Header" @bind:after="SaveLayouts" />
-                                </div>
-                                <div class="editor-group">
-                                    <label>Spalte 2</label>
-                                    <input type="text" @bind="selectedBlock.Options.Column2Header" @bind:after="SaveLayouts" />
-                                </div>
-                                <div class="editor-group checkbox-group">
-                                    <label>
-                                        <input type="checkbox" @bind="selectedBlock.Options.ShowColumnHeaders" @bind:after="SaveLayouts" />
-                                        Spaltenüberschriften
-                                    </label>
-                                </div>
-                                <div class="editor-group checkbox-group">
-                                    <label>
-                                        <input type="checkbox" @bind="selectedBlock.Options.AlternatingBackground" @bind:after="SaveLayouts" />
-                                        Zebra-Streifen
-                                    </label>
-                                </div>
-                            }
-
-                            @if (selectedBlock.Type == BlockType.CheckList)
-                            {
-                                <div class="editor-group">
-                                    <label>Aufzählungszeichen</label>
-                                    <div class="bullet-picker">
-                                        @foreach (var b in availableBullets)
-                                        {
-                                            <button type="button" class="bullet-btn @(selectedBlock.Options.BulletChar == b ? "selected" : "")"
-                                                    @onclick="() => SetBullet(b)">@b</button>
-                                        }
-                                    </div>
-                                </div>
-                            }
-
-                            @if (selectedBlock.Type == BlockType.Image)
-                            {
-                                <div class="editor-group">
-                                    <label>Ausrichtung</label>
-                                    <select @bind="selectedBlock.Options.Alignment" @bind:after="SaveLayouts">
-                                        <option value="left">Links</option>
-                                        <option value="center">Zentriert</option>
-                                        <option value="right">Rechts</option>
-                                    </select>
-                                </div>
-                                <div class="editor-group">
-                                    <label>Max. Breite (px)</label>
-                                    <input type="number" @bind="selectedBlock.Options.MaxWidth" @bind:after="SaveLayouts" min="100" max="800" />
-                                </div>
-                            }
-
-                            <div class="editor-actions">
-                                <button class="btn btn-danger" @onclick="DeleteBlock">
-                                    <span class="icon">🗑️</span> Block löschen
-                                </button>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="no-selection">
-                                <p>Wähle einen Block aus der Liste.</p>
-                                <p>Ziehe Blöcke per Drag & Drop, um die Reihenfolge zu ändern.</p>
-                            </div>
-                        }
-                    </div>
-                </div>
-
-                <div class="nav-buttons">
-                    <div></div>
-                    <button class="btn btn-primary btn-large" @onclick="() => GoToPhase(1)">
-                        Weiter zur Eingabe <span class="icon">→</span>
-                    </button>
-                </div>
-            </div>
-        }
-
-        @* ═══════════════ PHASE 1: EINGABE ═══════════════ *@
-        @if (currentPhase == 1)
-        {
-            <div class="phase-content input-phase">
-                <div class="toolbar">
-                    <button class="btn btn-secondary" @onclick="LoadDemo">
-                        <span class="icon">📋</span> Demo
-                    </button>
-                    <button class="btn btn-secondary" @onclick="ResetArticle">
-                        <span class="icon">🗑️</span> Zurücksetzen
-                    </button>
-                    <button class="btn btn-secondary" @onclick="CopyJsonSchema">
-                        <span class="icon">🤖</span> JSON-Schema
-                    </button>
-                    <button class="btn btn-secondary" @onclick="ExportArticle">
-                        <span class="icon">📤</span> Export
-                    </button>
-                    <label class="btn btn-secondary">
-                        <span class="icon">📥</span> Import
-                        <InputFile OnChange="ImportArticle" accept=".json" style="display: none;" />
-                    </label>
-                </div>
-
-                <div class="form-grid">
-                    @* Header Section *@
-                    <div class="form-section">
-                        <h2>📌 Header</h2>
-                        <div class="form-group">
-                            <label>Titel</label>
-                            <input type="text" @bind="article.Title" placeholder="Produktname" />
-                        </div>
-                        <div class="form-group">
-                            <label>Untertitel</label>
-                            <input type="text" @bind="article.Subtitle" placeholder="Kurzbeschreibung │ Artikelnummer" />
-                        </div>
-                    </div>
-
-                    @* Mobile Summary *@
-                    <div class="form-section">
-                        <h2>📱 Mobile Summary</h2>
-                        <div class="form-group">
-                            <label>Zusammenfassung (max. 800 Zeichen)</label>
-                            <textarea @bind="article.MobileSummary" rows="3" 
-                                      placeholder="Kurze Produktbeschreibung für Mobile..."></textarea>
-                            <span class="char-count @(article.MobileSummary?.Length > 800 ? "over-limit" : "")">
-                                @(article.MobileSummary?.Length ?? 0) / 800
-                            </span>
-                        </div>
-                    </div>
-
-                    @* Dynamic Blocks *@
-                    @foreach (var block in currentLayout.Blocks.OrderBy(b => b.Order))
-                    {
-                        <div class="form-section">
-                            <div class="section-header">
-                                <h2>@block.Icon @block.Title</h2>
-                                <button class="btn-clear" @onclick="() => ClearBlock(block.Id)" title="Löschen">×</button>
-                            </div>
-                            <div class="form-group">
-                                <label>@block.Type.GetInputLabel()</label>
-                                @if (block.Type == BlockType.Image)
-                                {
-                                    <div class="input-with-button">
-                                        <input type="text" value="@article.GetBlockContent(block.Id)" 
-                                               @onchange="e => SetContent(block.Id, e)" placeholder="https://..." />
-                                        <label class="btn btn-accent">
-                                            <span class="icon">📷</span>
-                                            <InputFile OnChange="e => UploadImage(e, block.Id)" accept="image/*" style="display: none;" />
-                                        </label>
-                                    </div>
-                                    @if (!string.IsNullOrEmpty(article.GetBlockContent(block.Id)))
-                                    {
-                                        <div class="image-preview">
-                                            <img src="@article.GetBlockContent(block.Id)" alt="Vorschau" />
-                                        </div>
-                                    }
-                                }
-                                else
-                                {
-                                    <textarea value="@article.GetBlockContent(block.Id)"
-                                              @onchange="e => SetContent(block.Id, e)"
-                                              rows="@GetTextareaRows(block.Type)"
-                                              placeholder="@block.Type.GetInputPlaceholder()"></textarea>
-                                }
-                            </div>
-                        </div>
-                    }
-
-                    @* Footer *@
-                    <div class="form-section">
-                        <div class="section-header">
-                            <h2>🏷️ Fußzeile</h2>
-                            <button class="btn-clear" @onclick="() => article.Footer = string.Empty" title="Löschen">×</button>
-                        </div>
-                        <div class="form-group">
-                            <label>Pro Zeile ein Eintrag, max. 4 Zeilen (Format: Label: Wert)</label>
-                            <textarea @bind="article.Footer" rows="4" 
-                                      placeholder="SKU: ABC123&#10;Farbe: Schwarz&#10;Garantie: 2 Jahre"></textarea>
-                            <span class="char-count @(GetFooterLines() > 4 ? "over-limit" : "")">
-                                @GetFooterLines() / 4 Zeilen
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="nav-buttons">
-                    <button class="btn btn-secondary btn-large" @onclick="() => GoToPhase(0)">
-                        <span class="icon">←</span> Layout
-                    </button>
-                    <button class="btn btn-primary btn-large" @onclick="() => GoToPhase(2)">
-                        Vorschau <span class="icon">→</span>
-                    </button>
-                </div>
-            </div>
-        }
-
-        @* ═══════════════ PHASE 2: VORSCHAU ═══════════════ *@
-        @if (currentPhase == 2)
-        {
-            <div class="phase-content preview-phase">
-                <div class="preview-container">
-                    <div class="preview-frame">
-                        @((MarkupString)generatedHtml)
-                    </div>
-                </div>
-
-                <div class="nav-buttons">
-                    <button class="btn btn-secondary btn-large" @onclick="() => GoToPhase(1)">
-                        <span class="icon">←</span> Eingabe
-                    </button>
-                    <button class="btn btn-primary btn-large" @onclick="() => GoToPhase(3)">
-                        HTML <span class="icon">→</span>
-                    </button>
-                </div>
-            </div>
-        }
-
-        @* ═══════════════ PHASE 3: HTML ═══════════════ *@
-        @if (currentPhase == 3)
-        {
-            <div class="phase-content html-phase">
-                <div class="html-container">
-                    <div class="html-toolbar">
-                        <button class="btn btn-primary" @onclick="CopyHtml">
-                            <span class="icon">📋</span> Kopieren
-                        </button>
-                        <button class="btn btn-accent" @onclick="DownloadHtml">
-                            <span class="icon">💾</span> Herunterladen
-                        </button>
-                    </div>
-                    <pre class="html-code"><code>@generatedHtml</code></pre>
-                </div>
-
-                <div class="nav-buttons">
-                    <button class="btn btn-secondary btn-large" @onclick="() => GoToPhase(2)">
-                        <span class="icon">←</span> Vorschau
-                    </button>
-                    <button class="btn btn-secondary btn-large" @onclick="() => GoToPhase(1)">
-                        <span class="icon">🔄</span> Neuer Artikel
-                    </button>
-                </div>
-            </div>
+            case 0:
+                @RenderLayoutPhase()
+                break;
+            case 1:
+                @RenderInputPhase()
+                break;
+            case 2:
+                @RenderPreviewPhase()
+                break;
+            case 3:
+                @RenderHtmlPhase()
+                break;
         }
     </main>
 </div>
 
-@* ═══════════════ DIALOGE ═══════════════ *@
-
-@* Block hinzufügen *@
-@if (showAddBlockDialog)
-{
-    <div class="modal-overlay" @onclick="() => showAddBlockDialog = false">
-        <div class="modal-dialog" @onclick:stopPropagation>
-            <h3>Block hinzufügen</h3>
-            <div class="block-type-list">
-                @foreach (BlockType t in Enum.GetValues<BlockType>())
-                {
-                    <button class="block-type-btn" @onclick="() => AddBlock(t)">
-                        <span class="icon">@t.GetDefaultIcon()</span>
-                        <span class="name">@t.GetDisplayName()</span>
-                    </button>
-                }
-            </div>
-            <button class="btn btn-secondary" @onclick="() => showAddBlockDialog = false">Abbrechen</button>
-        </div>
-    </div>
-}
-
-@* Import-Konflikt *@
-@if (showImportConflict)
-{
-    <div class="modal-overlay" @onclick="() => showImportConflict = false">
-        <div class="modal-dialog" @onclick:stopPropagation>
-            <h3>⚠️ Layout-Konflikt</h3>
-            <p>Das importierte Layout unterscheidet sich vom aktuellen.</p>
-            <p><strong>Aktuell:</strong> @currentLayout.Name (@currentLayout.Blocks.Count Blöcke)</p>
-            <p><strong>Import:</strong> @importedArticle?.Layout?.Name (@importedArticle?.Layout?.Blocks.Count Blöcke)</p>
-            
-            <div class="modal-actions">
-                <button class="btn btn-primary" @onclick="ImportWithNewLayout">Layout übernehmen</button>
-                <button class="btn btn-secondary" @onclick="ImportKeepLayout">Daten einpassen</button>
-                <button class="btn btn-secondary" @onclick="() => showImportConflict = false">Abbrechen</button>
-            </div>
-        </div>
-    </div>
-}
-
-@* Notification *@
-@if (!string.IsNullOrEmpty(notification))
-{
-    <div class="notification @(notificationSuccess ? "success" : "error")">@notification</div>
-}
+@RenderDialogs()
+@RenderNotification()
 
 @code {
     // ═══════════════ STATE ═══════════════
-    private int currentPhase = 0;
+    private int currentPhase;
     private List<LayoutTemplate> layouts = new();
-    private string selectedLayoutId = "standard";
+    private string selectedLayoutId = LayoutTemplate.StandardLayoutId;
     private LayoutTemplate currentLayout = LayoutTemplate.CreateStandard();
     private string? selectedBlockId;
-    private BlockDefinition? selectedBlock => currentLayout.Blocks.FirstOrDefault(b => b.Id == selectedBlockId);
+    private BlockDefinition? SelectedBlock => currentLayout.Blocks.FirstOrDefault(b => b.Id == selectedBlockId);
     
     private ArticleData article = new();
-    private string generatedHtml = "";
+    private string generatedHtml = string.Empty;
     
-    // Dialogs
     private bool showAddBlockDialog;
     private bool showImportConflict;
     private ArticleData? importedArticle;
     
-    // Notifications
-    private string notification = "";
+    private string notification = string.Empty;
     private bool notificationSuccess;
+    private CancellationTokenSource? notificationCts;
     
-    // SortableJS
     private DotNetObjectReference<Index>? dotNetHelper;
-    
-    // UI Data
-    private readonly string[] availableIcons = { "🖼️", "📝", "✦", "⚙", "🔧", "📦", "💡", "⭐", "🎯", "📊", "🔍", "⚡", "🛠️", "📐", "🎨", "📋" };
-    private readonly string[] availableBullets = { "✓", "•", "▸", "★", "►", "◆", "→", "▪" };
 
     // ═══════════════ LIFECYCLE ═══════════════
     protected override async Task OnInitializedAsync()
@@ -507,10 +92,29 @@
         }
     }
 
+    public async ValueTask DisposeAsync()
+    {
+        notificationCts?.Cancel();
+        notificationCts?.Dispose();
+        
+        try
+        {
+            await JS.InvokeVoidAsync("destroySortable", "block-list");
+        }
+        catch { /* Ignore JS errors during dispose */ }
+        
+        dotNetHelper?.Dispose();
+    }
+
+    // ═══════════════ SORTABLE ═══════════════
     private async Task InitSortable()
     {
         dotNetHelper ??= DotNetObjectReference.Create(this);
-        await JS.InvokeVoidAsync("initSortable", "block-list", dotNetHelper);
+        try
+        {
+            await JS.InvokeVoidAsync("initSortable", "block-list", dotNetHelper);
+        }
+        catch { /* Element might not exist yet */ }
     }
 
     [JSInvokable]
@@ -523,7 +127,7 @@
         orderedBlocks.RemoveAt(oldIndex);
         orderedBlocks.Insert(newIndex, movedBlock);
         
-        for (int i = 0; i < orderedBlocks.Count; i++)
+        for (var i = 0; i < orderedBlocks.Count; i++)
         {
             orderedBlocks[i].Order = i;
         }
@@ -533,41 +137,38 @@
         StateHasChanged();
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        await JS.InvokeVoidAsync("destroySortable", "block-list");
-        dotNetHelper?.Dispose();
-    }
-
     // ═══════════════ LAYOUT MANAGEMENT ═══════════════
     private async Task LoadLayouts()
     {
         try
         {
-            var saved = await LocalStorage.GetItemAsync<List<LayoutTemplate>>("relexx-layouts");
+            var saved = await LocalStorage.GetItemAsync<List<LayoutTemplate>>(Constants.Storage.LayoutsKey);
             layouts = saved ?? new();
-            if (!layouts.Any(l => l.IsDefault))
-                layouts.Insert(0, LayoutTemplate.CreateStandard());
             
-            currentLayout = layouts.FirstOrDefault(l => l.Id == selectedLayoutId) ?? layouts.First();
+            if (!layouts.Exists(l => l.IsDefault))
+            {
+                layouts.Insert(0, LayoutTemplate.CreateStandard());
+            }
+            
+            currentLayout = layouts.Find(l => l.Id == selectedLayoutId) ?? layouts[0];
             selectedLayoutId = currentLayout.Id;
         }
         catch
         {
             layouts = new() { LayoutTemplate.CreateStandard() };
-            currentLayout = layouts.First();
+            currentLayout = layouts[0];
         }
     }
 
     private async Task SaveLayouts()
     {
         currentLayout.ModifiedAt = DateTime.UtcNow;
-        await LocalStorage.SetItemAsync("relexx-layouts", layouts);
+        await LocalStorage.SetItemAsync(Constants.Storage.LayoutsKey, layouts);
     }
 
     private async Task OnLayoutSelected()
     {
-        currentLayout = layouts.FirstOrDefault(l => l.Id == selectedLayoutId) ?? layouts.First();
+        currentLayout = layouts.Find(l => l.Id == selectedLayoutId) ?? layouts[0];
         selectedBlockId = null;
         article.Layout = currentLayout;
         await InitSortable();
@@ -578,7 +179,11 @@
         var newLayout = new LayoutTemplate
         {
             Name = "Neues Layout",
-            Blocks = new() { BlockDefinition.CreateDefault(BlockType.Image), BlockDefinition.CreateDefault(BlockType.RichText, 1) }
+            Blocks = new() 
+            { 
+                BlockDefinition.CreateDefault(BlockType.Image), 
+                BlockDefinition.CreateDefault(BlockType.RichText, 1) 
+            }
         };
         layouts.Add(newLayout);
         selectedLayoutId = newLayout.Id;
@@ -600,8 +205,9 @@
     private async Task DeleteLayout()
     {
         if (currentLayout.IsDefault || layouts.Count <= 1) return;
+        
         layouts.Remove(currentLayout);
-        currentLayout = layouts.First();
+        currentLayout = layouts[0];
         selectedLayoutId = currentLayout.Id;
         selectedBlockId = null;
         await SaveLayouts();
@@ -609,37 +215,40 @@
 
     private async Task ExportLayout()
     {
-        var json = JsonSerializer.Serialize(currentLayout, new JsonSerializerOptions { WriteIndented = true });
-        await JS.InvokeVoidAsync("downloadFile", $"layout-{currentLayout.Name}_{DateTime.Now:yyyy-MM-dd_HHmm}.json", "application/json", json);
+        var json = JsonSerializer.Serialize(currentLayout, Helpers.JsonOptions);
+        var fileName = $"layout-{currentLayout.Name}_{DateTime.UtcNow:yyyy-MM-dd_HHmm}.json";
+        await JS.InvokeVoidAsync("downloadFile", fileName, "application/json", json);
     }
 
     private async Task ImportLayout(InputFileChangeEventArgs e)
     {
         try
         {
-            using var stream = e.File.OpenReadStream();
+            await using var stream = e.File.OpenReadStream();
             var imported = await JsonSerializer.DeserializeAsync<LayoutTemplate>(stream);
-            if (imported != null)
-            {
-                imported.Id = Guid.NewGuid().ToString("N")[..8];
-                imported.IsDefault = false;
-                layouts.Add(imported);
-                selectedLayoutId = imported.Id;
-                currentLayout = imported;
-                await SaveLayouts();
-                await Notify("✓ Layout importiert!", true);
-            }
+            
+            if (imported is null) return;
+            
+            imported.Id = Helpers.GenerateShortId();
+            imported.IsDefault = false;
+            layouts.Add(imported);
+            selectedLayoutId = imported.Id;
+            currentLayout = imported;
+            await SaveLayouts();
+            await ShowNotification("✓ Layout importiert!", true);
         }
-        catch (Exception ex) { await Notify($"Fehler: {ex.Message}", false); }
+        catch (Exception ex)
+        {
+            await ShowNotification($"Fehler: {ex.Message}", false);
+        }
     }
 
     // ═══════════════ BLOCK MANAGEMENT ═══════════════
     private void SelectBlock(BlockDefinition block) => selectedBlockId = block.Id;
-    private void ShowAddBlockDialog() => showAddBlockDialog = true;
 
     private async Task AddBlock(BlockType type)
     {
-        var order = currentLayout.Blocks.Any() ? currentLayout.Blocks.Max(b => b.Order) + 1 : 0;
+        var order = currentLayout.Blocks.Count > 0 ? currentLayout.Blocks.Max(b => b.Order) + 1 : 0;
         var block = BlockDefinition.CreateDefault(type, order);
         currentLayout.Blocks.Add(block);
         selectedBlockId = block.Id;
@@ -650,8 +259,9 @@
 
     private async Task DeleteBlock()
     {
-        if (selectedBlock == null) return;
-        currentLayout.Blocks.Remove(selectedBlock);
+        if (SelectedBlock is null) return;
+        
+        currentLayout.Blocks.Remove(SelectedBlock);
         currentLayout.ReorderBlocks();
         selectedBlockId = null;
         await SaveLayouts();
@@ -660,21 +270,30 @@
 
     private async Task OnBlockTypeChanged()
     {
-        if (selectedBlock == null) return;
-        selectedBlock.Options = BlockOptions.CreateDefault(selectedBlock.Type);
-        selectedBlock.Icon = selectedBlock.Type.GetDefaultIcon();
-        selectedBlock.Title = selectedBlock.Type.GetDefaultTitle();
+        if (SelectedBlock is null) return;
+        
+        SelectedBlock.Options = BlockOptions.CreateDefault(SelectedBlock.Type);
+        SelectedBlock.Icon = SelectedBlock.Type.GetDefaultIcon();
+        SelectedBlock.Title = SelectedBlock.Type.GetDefaultTitle();
         await SaveLayouts();
     }
 
     private async Task SetBlockIcon(string icon)
     {
-        if (selectedBlock != null) { selectedBlock.Icon = icon; await SaveLayouts(); }
+        if (SelectedBlock is not null)
+        {
+            SelectedBlock.Icon = icon;
+            await SaveLayouts();
+        }
     }
 
     private async Task SetBullet(string bullet)
     {
-        if (selectedBlock != null) { selectedBlock.Options.BulletChar = bullet; await SaveLayouts(); }
+        if (SelectedBlock is not null)
+        {
+            SelectedBlock.Options.BulletChar = bullet;
+            await SaveLayouts();
+        }
     }
 
     // ═══════════════ ARTICLE MANAGEMENT ═══════════════
@@ -682,31 +301,36 @@
     {
         try
         {
-            var saved = await LocalStorage.GetItemAsync<ArticleData>("relexx-article");
-            if (saved != null)
+            var saved = await LocalStorage.GetItemAsync<ArticleData>(Constants.Storage.ArticleKey);
+            if (saved is not null)
             {
                 article = saved;
-                if (layouts.Any(l => l.Id == article.Layout?.Id))
+                if (article.Layout?.Id is not null && layouts.Exists(l => l.Id == article.Layout.Id))
                 {
-                    selectedLayoutId = article.Layout!.Id;
+                    selectedLayoutId = article.Layout.Id;
                     currentLayout = layouts.First(l => l.Id == article.Layout.Id);
                 }
             }
-            else article = new() { Layout = currentLayout };
+            else
+            {
+                article = new() { Layout = currentLayout };
+            }
         }
-        catch { article = new() { Layout = currentLayout }; }
+        catch
+        {
+            article = new() { Layout = currentLayout };
+        }
     }
 
     private async Task SaveArticle()
     {
         article.Layout = currentLayout;
         article.ModifiedAt = DateTime.UtcNow;
-        await LocalStorage.SetItemAsync("relexx-article", article);
+        await LocalStorage.SetItemAsync(Constants.Storage.ArticleKey, article);
     }
 
     private void LoadDemo()
     {
-        // Dynamisch Demo-Daten für jeden Block im aktuellen Layout generieren
         article = new ArticleData
         {
             Title = "Premium Produkt XYZ-3000",
@@ -718,26 +342,14 @@
 
         foreach (var block in currentLayout.Blocks)
         {
-            var demoContent = block.Type switch
-            {
-                BlockType.Image => "https://placehold.co/600x400/1a1a1a/f5c518?text=Produktbild",
-                BlockType.RichText => $"**{block.Title}** bietet herausragende Qualität und durchdachte Features.\n\nDie hochwertige Verarbeitung garantiert langlebige Zuverlässigkeit für den täglichen Einsatz.",
-                BlockType.KeyValueGrid => "Premium Qualität | Erstklassige Materialien und Verarbeitung\nInnovatives Design | Moderne Optik trifft Funktionalität\nEinfache Bedienung | Intuitive Handhabung für jeden\nLanglebigkeit | Robust und zuverlässig",
-                BlockType.DataTable => "Material | Aluminium / Kunststoff\nAbmessungen | 250 × 150 × 80 mm\nGewicht | 450 g\nFarbe | Schwarz\nAnschlüsse | USB-C, HDMI",
-                BlockType.FeatureCards => "Typ A | Standard │ Premium │ Pro\nTyp B | Basic │ Advanced",
-                BlockType.CheckList => "1× Hauptgerät\n1× USB-C Kabel\n1× Kurzanleitung\n1× Garantiekarte",
-                _ => ""
-            };
-            article.SetBlockContent(block.Id, demoContent);
+            article.SetBlockContent(block.Id, block.Type.GetDemoContent(block.Title));
         }
     }
 
     private void ResetArticle() => article = new() { Layout = currentLayout };
 
-    private void SetContent(string blockId, ChangeEventArgs e)
-    {
-        article.SetBlockContent(blockId, e.Value?.ToString() ?? "");
-    }
+    private void SetContent(string blockId, ChangeEventArgs e) 
+        => article.SetBlockContent(blockId, e.Value?.ToString() ?? string.Empty);
 
     private void ClearBlock(string blockId) => article.ClearBlockContent(blockId);
 
@@ -746,12 +358,13 @@
         try
         {
             var file = e.File;
-            if (file.Size > 5 * 1024 * 1024)
+            if (file.Size > Constants.FileLimits.MaxImageSizeBytes)
             {
-                await Notify("Bild zu groß (max. 5 MB)", false);
+                await ShowNotification("Bild zu groß (max. 5 MB)", false);
                 return;
             }
-            using var stream = file.OpenReadStream(5 * 1024 * 1024);
+            
+            await using var stream = file.OpenReadStream(Constants.FileLimits.MaxImageSizeBytes);
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
             var base64 = Convert.ToBase64String(ms.ToArray());
@@ -760,14 +373,14 @@
         }
         catch (Exception ex)
         {
-            await Notify($"Upload fehlgeschlagen: {ex.Message}", false);
+            await ShowNotification($"Upload fehlgeschlagen: {ex.Message}", false);
         }
     }
 
     private async Task ExportArticle()
     {
         article.Layout = currentLayout;
-        var json = JsonSerializer.Serialize(article, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(article, Helpers.JsonOptions);
         await JS.InvokeVoidAsync("downloadFile", article.GenerateFileName(), "application/json", json);
     }
 
@@ -775,9 +388,10 @@
     {
         try
         {
-            using var stream = e.File.OpenReadStream(10 * 1024 * 1024);
+            await using var stream = e.File.OpenReadStream(Constants.FileLimits.MaxImportSizeBytes);
             importedArticle = await JsonSerializer.DeserializeAsync<ArticleData>(stream);
-            if (importedArticle == null) return;
+            
+            if (importedArticle is null) return;
             
             if (!currentLayout.IsCompatibleWith(importedArticle.Layout))
             {
@@ -787,20 +401,20 @@
             {
                 article = importedArticle;
                 article.Layout = currentLayout;
-                await Notify("✓ Artikel importiert!", true);
+                await ShowNotification("✓ Artikel importiert!", true);
             }
         }
         catch (Exception ex)
         {
-            await Notify($"Import fehlgeschlagen: {ex.Message}", false);
+            await ShowNotification($"Import fehlgeschlagen: {ex.Message}", false);
         }
     }
 
     private async Task ImportWithNewLayout()
     {
-        if (importedArticle?.Layout == null) return;
+        if (importedArticle?.Layout is null) return;
         
-        if (!layouts.Any(l => l.Id == importedArticle.Layout.Id))
+        if (!layouts.Exists(l => l.Id == importedArticle.Layout.Id))
         {
             importedArticle.Layout.IsDefault = false;
             layouts.Add(importedArticle.Layout);
@@ -811,12 +425,12 @@
         currentLayout = importedArticle.Layout;
         article = importedArticle;
         showImportConflict = false;
-        await Notify("✓ Artikel mit Layout importiert!", true);
+        await ShowNotification("✓ Artikel mit Layout importiert!", true);
     }
 
     private async Task ImportKeepLayout()
     {
-        if (importedArticle == null) return;
+        if (importedArticle is null) return;
         
         article.Title = importedArticle.Title;
         article.Subtitle = importedArticle.Subtitle;
@@ -826,21 +440,23 @@
         foreach (var block in currentLayout.Blocks)
         {
             if (importedArticle.BlockContents.TryGetValue(block.Id, out var content))
+            {
                 article.SetBlockContent(block.Id, content);
+            }
         }
         
         showImportConflict = false;
-        await Notify("✓ Daten importiert", true);
+        await ShowNotification("✓ Daten importiert", true);
     }
 
     private async Task CopyJsonSchema()
     {
         var schema = ArticleData.GenerateJsonSchema(currentLayout);
         await JS.InvokeVoidAsync("navigator.clipboard.writeText", schema);
-        await Notify("✓ JSON-Schema kopiert!", true);
+        await ShowNotification("✓ JSON-Schema kopiert!", true);
     }
 
-    // ═══════════════ HTML GENERATION ═══════════════
+    // ═══════════════ NAVIGATION & HTML ═══════════════
     private async Task GoToPhase(int phase)
     {
         if (phase >= 2)
@@ -848,12 +464,13 @@
             article.Layout = currentLayout;
             generatedHtml = TemplateGenerator.GenerateHtml(article);
         }
+        
         currentPhase = phase;
         await SaveArticle();
         
         if (phase == 0)
         {
-            await Task.Delay(50); // Wait for DOM
+            await Task.Delay(Constants.Timing.DomRenderDelayMs);
             await InitSortable();
         }
     }
@@ -863,9 +480,12 @@
         try
         {
             await JS.InvokeVoidAsync("navigator.clipboard.writeText", generatedHtml);
-            await Notify("✓ HTML kopiert!", true);
+            await ShowNotification("✓ HTML kopiert!", true);
         }
-        catch { await Notify("Kopieren fehlgeschlagen", false); }
+        catch
+        {
+            await ShowNotification("Kopieren fehlgeschlagen", false);
+        }
     }
 
     private async Task DownloadHtml()
@@ -874,23 +494,467 @@
     }
 
     // ═══════════════ HELPERS ═══════════════
-    private string GetPhaseName(int phase) => phase switch { 0 => "Layout", 1 => "Eingabe", 2 => "Vorschau", _ => "HTML" };
+    private string GetPhaseClass(int phase) => currentPhase == phase ? "active" : currentPhase > phase ? "completed" : "";
     
-    private int GetFooterLines() => string.IsNullOrWhiteSpace(article.Footer) ? 0 : article.Footer.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length;
+    private static string GetPhaseName(int phase) => phase switch 
+    { 
+        0 => "Layout", 
+        1 => "Eingabe", 
+        2 => "Vorschau", 
+        _ => "HTML" 
+    };
     
-    private int GetTextareaRows(BlockType type) => type switch
+    private int GetFooterLines() => string.IsNullOrWhiteSpace(article.Footer) 
+        ? 0 
+        : article.Footer.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length;
+    
+    private static int GetTextareaRows(BlockType type) => type switch
     {
-        BlockType.RichText => 6, BlockType.KeyValueGrid => 7, BlockType.DataTable => 8,
-        BlockType.FeatureCards => 3, BlockType.CheckList => 5, _ => 4
+        BlockType.RichText => 6,
+        BlockType.KeyValueGrid => 7,
+        BlockType.DataTable => 8,
+        BlockType.FeatureCards => 3,
+        BlockType.CheckList => 5,
+        _ => 4
     };
 
-    private async Task Notify(string msg, bool success)
+    private async Task ShowNotification(string msg, bool success)
     {
+        notificationCts?.Cancel();
+        notificationCts = new CancellationTokenSource();
+        
         notification = msg;
         notificationSuccess = success;
         StateHasChanged();
-        await Task.Delay(3000);
-        notification = "";
-        StateHasChanged();
+        
+        try
+        {
+            await Task.Delay(Constants.Timing.NotificationDurationMs, notificationCts.Token);
+            notification = string.Empty;
+            StateHasChanged();
+        }
+        catch (TaskCanceledException)
+        {
+            // Notification was replaced by another one
+        }
     }
+
+    // ═══════════════ RENDER METHODS ═══════════════
+    private RenderFragment RenderLayoutPhase() => __builder =>
+    {
+        <div class="phase-content layout-phase">
+            <div class="toolbar">
+                <select class="layout-select" @bind="selectedLayoutId" @bind:after="OnLayoutSelected">
+                    @foreach (var l in layouts)
+                    {
+                        <option value="@l.Id">@l.Name @(l.IsDefault ? "(Standard)" : "")</option>
+                    }
+                </select>
+                <button class="btn btn-secondary" @onclick="CreateNewLayout" title="Neues Layout erstellen">
+                    <span class="icon">➕</span> Neu
+                </button>
+                <button class="btn btn-secondary" @onclick="DuplicateLayout" title="Layout duplizieren">
+                    <span class="icon">📋</span> Duplizieren
+                </button>
+                <button class="btn btn-secondary" @onclick="ExportLayout" title="Layout exportieren">
+                    <span class="icon">📤</span> Export
+                </button>
+                <label class="btn btn-secondary" title="Layout importieren">
+                    <span class="icon">📥</span> Import
+                    <InputFile OnChange="ImportLayout" accept=".json" style="display: none;" />
+                </label>
+                <button class="btn btn-danger" @onclick="DeleteLayout" 
+                        disabled="@(currentLayout.IsDefault || layouts.Count <= 1)" 
+                        title="Layout löschen">
+                    <span class="icon">🗑️</span>
+                </button>
+            </div>
+
+            <div class="layout-editor">
+                <div class="layout-sidebar">
+                    <div class="sidebar-section">
+                        <label>Layout-Name</label>
+                        <input type="text" @bind="currentLayout.Name" @bind:after="SaveLayouts" 
+                               disabled="@currentLayout.IsDefault" placeholder="Layout-Name" />
+                    </div>
+
+                    <div class="sidebar-section">
+                        <div class="section-header">
+                            <h3>Blöcke</h3>
+                            <button class="btn btn-small btn-accent" @onclick="() => showAddBlockDialog = true">
+                                <span class="icon">➕</span>
+                            </button>
+                        </div>
+                        <div class="block-list" id="block-list">
+                            @foreach (var block in currentLayout.Blocks.OrderBy(b => b.Order))
+                            {
+                                <div class="block-item @(selectedBlockId == block.Id ? "selected" : "")"
+                                     data-id="@block.Id"
+                                     @onclick="() => SelectBlock(block)">
+                                    <span class="drag-handle">☰</span>
+                                    <span class="block-icon">@block.Icon</span>
+                                    <span class="block-title">@block.Title</span>
+                                    <span class="block-type">@block.Type.GetDisplayName()</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h3>🎨 Farbschema</h3>
+                        <div class="color-row">
+                            <label>Primär</label>
+                            <input type="color" @bind="currentLayout.Colors.PrimaryColor" @bind:after="SaveLayouts" />
+                            <input type="text" class="color-text" @bind="currentLayout.Colors.PrimaryColor" @bind:after="SaveLayouts" />
+                        </div>
+                        <div class="color-row">
+                            <label>Akzent</label>
+                            <input type="color" @bind="currentLayout.Colors.AccentColor" @bind:after="SaveLayouts" />
+                            <input type="text" class="color-text" @bind="currentLayout.Colors.AccentColor" @bind:after="SaveLayouts" />
+                        </div>
+                        <div class="color-row">
+                            <label>Hintergrund</label>
+                            <input type="color" @bind="currentLayout.Colors.BackgroundColor" @bind:after="SaveLayouts" />
+                            <input type="text" class="color-text" @bind="currentLayout.Colors.BackgroundColor" @bind:after="SaveLayouts" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="block-editor">
+                    @if (SelectedBlock is not null)
+                    {
+                        <h3>Block bearbeiten</h3>
+                        
+                        <div class="editor-group">
+                            <label>Block-Typ</label>
+                            <select @bind="SelectedBlock.Type" @bind:after="OnBlockTypeChanged">
+                                @foreach (BlockType t in Enum.GetValues<BlockType>())
+                                {
+                                    <option value="@t">@t.GetDisplayName()</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="editor-group">
+                            <label>Icon</label>
+                            <div class="icon-picker">
+                                @foreach (var icon in Constants.AvailableIcons)
+                                {
+                                    <button type="button" class="icon-btn @(SelectedBlock.Icon == icon ? "selected" : "")"
+                                            @onclick="() => SetBlockIcon(icon)">@icon</button>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="editor-group">
+                            <label>Überschrift</label>
+                            <input type="text" @bind="SelectedBlock.Title" @bind:after="SaveLayouts" />
+                        </div>
+
+                        @RenderBlockOptions(SelectedBlock)
+
+                        <div class="editor-actions">
+                            <button class="btn btn-danger" @onclick="DeleteBlock">
+                                <span class="icon">🗑️</span> Block löschen
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="no-selection">
+                            <p>Wähle einen Block aus der Liste.</p>
+                            <p>Ziehe Blöcke per Drag & Drop, um die Reihenfolge zu ändern.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="nav-buttons">
+                <div></div>
+                <button class="btn btn-primary btn-large" @onclick="() => GoToPhase(1)">
+                    Weiter zur Eingabe <span class="icon">→</span>
+                </button>
+            </div>
+        </div>
+    };
+
+    private RenderFragment RenderBlockOptions(BlockDefinition block) => __builder =>
+    {
+        @if (block.Type == BlockType.KeyValueGrid)
+        {
+            <div class="editor-group">
+                <label>Spalten</label>
+                <select @bind="block.Options.Columns" @bind:after="SaveLayouts">
+                    <option value="1">1 Spalte</option>
+                    <option value="2">2 Spalten</option>
+                    <option value="3">3 Spalten</option>
+                </select>
+            </div>
+            @RenderBulletPicker(block)
+        }
+
+        @if (block.Type == BlockType.DataTable)
+        {
+            <div class="editor-group">
+                <label>Spalte 1</label>
+                <input type="text" @bind="block.Options.Column1Header" @bind:after="SaveLayouts" />
+            </div>
+            <div class="editor-group">
+                <label>Spalte 2</label>
+                <input type="text" @bind="block.Options.Column2Header" @bind:after="SaveLayouts" />
+            </div>
+            <div class="editor-group checkbox-group">
+                <label>
+                    <input type="checkbox" @bind="block.Options.ShowColumnHeaders" @bind:after="SaveLayouts" />
+                    Spaltenüberschriften
+                </label>
+            </div>
+            <div class="editor-group checkbox-group">
+                <label>
+                    <input type="checkbox" @bind="block.Options.AlternatingBackground" @bind:after="SaveLayouts" />
+                    Zebra-Streifen
+                </label>
+            </div>
+        }
+
+        @if (block.Type == BlockType.CheckList)
+        {
+            @RenderBulletPicker(block)
+        }
+
+        @if (block.Type == BlockType.Image)
+        {
+            <div class="editor-group">
+                <label>Ausrichtung</label>
+                <select @bind="block.Options.Alignment" @bind:after="SaveLayouts">
+                    <option value="left">Links</option>
+                    <option value="center">Zentriert</option>
+                    <option value="right">Rechts</option>
+                </select>
+            </div>
+            <div class="editor-group">
+                <label>Max. Breite (px)</label>
+                <input type="number" @bind="block.Options.MaxWidth" @bind:after="SaveLayouts" min="100" max="800" />
+            </div>
+        }
+    };
+
+    private RenderFragment RenderBulletPicker(BlockDefinition block) => __builder =>
+    {
+        <div class="editor-group">
+            <label>Aufzählungszeichen</label>
+            <div class="bullet-picker">
+                @foreach (var b in Constants.AvailableBullets)
+                {
+                    <button type="button" class="bullet-btn @(block.Options.BulletChar == b ? "selected" : "")"
+                            @onclick="() => SetBullet(b)">@b</button>
+                }
+            </div>
+        </div>
+    };
+
+    private RenderFragment RenderInputPhase() => __builder =>
+    {
+        <div class="phase-content input-phase">
+            <div class="toolbar">
+                <button class="btn btn-secondary" @onclick="LoadDemo">
+                    <span class="icon">📋</span> Demo
+                </button>
+                <button class="btn btn-secondary" @onclick="ResetArticle">
+                    <span class="icon">🗑️</span> Zurücksetzen
+                </button>
+                <button class="btn btn-secondary" @onclick="CopyJsonSchema">
+                    <span class="icon">🤖</span> JSON-Schema
+                </button>
+                <button class="btn btn-secondary" @onclick="ExportArticle">
+                    <span class="icon">📤</span> Export
+                </button>
+                <label class="btn btn-secondary">
+                    <span class="icon">📥</span> Import
+                    <InputFile OnChange="ImportArticle" accept=".json" style="display: none;" />
+                </label>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-section">
+                    <h2>📌 Header</h2>
+                    <div class="form-group">
+                        <label>Titel</label>
+                        <input type="text" @bind="article.Title" placeholder="Produktname" />
+                    </div>
+                    <div class="form-group">
+                        <label>Untertitel</label>
+                        <input type="text" @bind="article.Subtitle" placeholder="Kurzbeschreibung │ Artikelnummer" />
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2>📱 Mobile Summary</h2>
+                    <div class="form-group">
+                        <label>Zusammenfassung (max. @Constants.Limits.MaxMobileSummaryLength Zeichen)</label>
+                        <textarea @bind="article.MobileSummary" rows="3" 
+                                  placeholder="Kurze Produktbeschreibung für Mobile..."></textarea>
+                        <span class="char-count @(article.MobileSummary?.Length > Constants.Limits.MaxMobileSummaryLength ? "over-limit" : "")">
+                            @(article.MobileSummary?.Length ?? 0) / @Constants.Limits.MaxMobileSummaryLength
+                        </span>
+                    </div>
+                </div>
+
+                @foreach (var block in currentLayout.Blocks.OrderBy(b => b.Order))
+                {
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h2>@block.Icon @block.Title</h2>
+                            <button class="btn-clear" @onclick="() => ClearBlock(block.Id)" title="Löschen">×</button>
+                        </div>
+                        <div class="form-group">
+                            <label>@block.Type.GetInputLabel()</label>
+                            @if (block.Type == BlockType.Image)
+                            {
+                                <div class="input-with-button">
+                                    <input type="text" value="@article.GetBlockContent(block.Id)" 
+                                           @onchange="e => SetContent(block.Id, e)" placeholder="https://..." />
+                                    <label class="btn btn-accent">
+                                        <span class="icon">📷</span>
+                                        <InputFile OnChange="e => UploadImage(e, block.Id)" accept="image/*" style="display: none;" />
+                                    </label>
+                                </div>
+                                @if (!string.IsNullOrEmpty(article.GetBlockContent(block.Id)))
+                                {
+                                    <div class="image-preview">
+                                        <img src="@article.GetBlockContent(block.Id)" alt="Vorschau" />
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <textarea value="@article.GetBlockContent(block.Id)"
+                                          @onchange="e => SetContent(block.Id, e)"
+                                          rows="@GetTextareaRows(block.Type)"
+                                          placeholder="@block.Type.GetInputPlaceholder()"></textarea>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="form-section">
+                    <div class="section-header">
+                        <h2>🏷️ Fußzeile</h2>
+                        <button class="btn-clear" @onclick="() => article.Footer = string.Empty" title="Löschen">×</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Pro Zeile ein Eintrag, max. @Constants.Limits.MaxFooterLines Zeilen (Format: Label: Wert)</label>
+                        <textarea @bind="article.Footer" rows="4" 
+                                  placeholder="SKU: ABC123&#10;Farbe: Schwarz&#10;Garantie: 2 Jahre"></textarea>
+                        <span class="char-count @(GetFooterLines() > Constants.Limits.MaxFooterLines ? "over-limit" : "")">
+                            @GetFooterLines() / @Constants.Limits.MaxFooterLines Zeilen
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-large" @onclick="() => GoToPhase(0)">
+                    <span class="icon">←</span> Layout
+                </button>
+                <button class="btn btn-primary btn-large" @onclick="() => GoToPhase(2)">
+                    Vorschau <span class="icon">→</span>
+                </button>
+            </div>
+        </div>
+    };
+
+    private RenderFragment RenderPreviewPhase() => __builder =>
+    {
+        <div class="phase-content preview-phase">
+            <div class="preview-container">
+                <div class="preview-frame">
+                    @((MarkupString)generatedHtml)
+                </div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-large" @onclick="() => GoToPhase(1)">
+                    <span class="icon">←</span> Eingabe
+                </button>
+                <button class="btn btn-primary btn-large" @onclick="() => GoToPhase(3)">
+                    HTML <span class="icon">→</span>
+                </button>
+            </div>
+        </div>
+    };
+
+    private RenderFragment RenderHtmlPhase() => __builder =>
+    {
+        <div class="phase-content html-phase">
+            <div class="html-container">
+                <div class="html-toolbar">
+                    <button class="btn btn-primary" @onclick="CopyHtml">
+                        <span class="icon">📋</span> Kopieren
+                    </button>
+                    <button class="btn btn-accent" @onclick="DownloadHtml">
+                        <span class="icon">💾</span> Herunterladen
+                    </button>
+                </div>
+                <pre class="html-code"><code>@generatedHtml</code></pre>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary btn-large" @onclick="() => GoToPhase(2)">
+                    <span class="icon">←</span> Vorschau
+                </button>
+                <button class="btn btn-secondary btn-large" @onclick="() => GoToPhase(1)">
+                    <span class="icon">🔄</span> Neuer Artikel
+                </button>
+            </div>
+        </div>
+    };
+
+    private RenderFragment RenderDialogs() => __builder =>
+    {
+        @if (showAddBlockDialog)
+        {
+            <div class="modal-overlay" @onclick="() => showAddBlockDialog = false">
+                <div class="modal-dialog" @onclick:stopPropagation>
+                    <h3>Block hinzufügen</h3>
+                    <div class="block-type-list">
+                        @foreach (BlockType t in Enum.GetValues<BlockType>())
+                        {
+                            <button class="block-type-btn" @onclick="() => AddBlock(t)">
+                                <span class="icon">@t.GetDefaultIcon()</span>
+                                <span class="name">@t.GetDisplayName()</span>
+                            </button>
+                        }
+                    </div>
+                    <button class="btn btn-secondary" @onclick="() => showAddBlockDialog = false">Abbrechen</button>
+                </div>
+            </div>
+        }
+
+        @if (showImportConflict)
+        {
+            <div class="modal-overlay" @onclick="() => showImportConflict = false">
+                <div class="modal-dialog" @onclick:stopPropagation>
+                    <h3>⚠️ Layout-Konflikt</h3>
+                    <p>Das importierte Layout unterscheidet sich vom aktuellen.</p>
+                    <p><strong>Aktuell:</strong> @currentLayout.Name (@currentLayout.Blocks.Count Blöcke)</p>
+                    <p><strong>Import:</strong> @importedArticle?.Layout?.Name (@importedArticle?.Layout?.Blocks.Count Blöcke)</p>
+                    
+                    <div class="modal-actions">
+                        <button class="btn btn-primary" @onclick="ImportWithNewLayout">Layout übernehmen</button>
+                        <button class="btn btn-secondary" @onclick="ImportKeepLayout">Daten einpassen</button>
+                        <button class="btn btn-secondary" @onclick="() => showImportConflict = false">Abbrechen</button>
+                    </div>
+                </div>
+            </div>
+        }
+    };
+
+    private RenderFragment RenderNotification() => __builder =>
+    {
+        @if (!string.IsNullOrEmpty(notification))
+        {
+            <div class="notification @(notificationSuccess ? "success" : "error")">@notification</div>
+        }
+    };
 }

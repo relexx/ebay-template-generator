@@ -29,7 +29,7 @@ public enum BlockType
 /// </summary>
 public class BlockDefinition
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString("N")[..8];
+    public string Id { get; set; } = Helpers.GenerateShortId();
     public BlockType Type { get; set; }
     public string Icon { get; set; } = "📄";
     public string Title { get; set; } = "Neuer Block";
@@ -39,33 +39,27 @@ public class BlockDefinition
     /// <summary>
     /// Erstellt eine Kopie mit neuer ID
     /// </summary>
-    public BlockDefinition Clone()
+    public BlockDefinition Clone() => new()
     {
-        return new BlockDefinition
-        {
-            Id = Guid.NewGuid().ToString("N")[..8],
-            Type = Type,
-            Icon = Icon,
-            Title = Title,
-            Order = Order,
-            Options = Options.Clone()
-        };
-    }
+        Id = Helpers.GenerateShortId(),
+        Type = Type,
+        Icon = Icon,
+        Title = Title,
+        Order = Order,
+        Options = Options.Clone()
+    };
     
     /// <summary>
     /// Erstellt einen Standard-Block für einen Typ
     /// </summary>
-    public static BlockDefinition CreateDefault(BlockType type, int order = 0)
+    public static BlockDefinition CreateDefault(BlockType type, int order = 0) => new()
     {
-        return new BlockDefinition
-        {
-            Type = type,
-            Icon = type.GetDefaultIcon(),
-            Title = type.GetDefaultTitle(),
-            Order = order,
-            Options = BlockOptions.CreateDefault(type)
-        };
-    }
+        Type = type,
+        Icon = type.GetDefaultIcon(),
+        Title = type.GetDefaultTitle(),
+        Order = order,
+        Options = BlockOptions.CreateDefault(type)
+    };
 }
 
 /// <summary>
@@ -89,40 +83,34 @@ public class BlockOptions
     public string Alignment { get; set; } = "center";
     public int MaxWidth { get; set; } = 600;
     
-    public BlockOptions Clone()
+    public BlockOptions Clone() => new()
     {
-        return new BlockOptions
-        {
-            BulletChar = BulletChar,
-            AlternatingBackground = AlternatingBackground,
-            Column1Header = Column1Header,
-            Column2Header = Column2Header,
-            ShowColumnHeaders = ShowColumnHeaders,
-            Columns = Columns,
-            Alignment = Alignment,
-            MaxWidth = MaxWidth
-        };
-    }
+        BulletChar = BulletChar,
+        AlternatingBackground = AlternatingBackground,
+        Column1Header = Column1Header,
+        Column2Header = Column2Header,
+        ShowColumnHeaders = ShowColumnHeaders,
+        Columns = Columns,
+        Alignment = Alignment,
+        MaxWidth = MaxWidth
+    };
     
-    public static BlockOptions CreateDefault(BlockType type)
+    public static BlockOptions CreateDefault(BlockType type) => type switch
     {
-        return type switch
-        {
-            BlockType.Image => new BlockOptions { Alignment = "center", MaxWidth = 600 },
-            BlockType.RichText => new BlockOptions(),
-            BlockType.KeyValueGrid => new BlockOptions { BulletChar = "▸", Columns = 2 },
-            BlockType.DataTable => new BlockOptions 
-            { 
-                Column1Header = "Spezifikation", 
-                Column2Header = "Wert",
-                ShowColumnHeaders = true,
-                AlternatingBackground = true
-            },
-            BlockType.FeatureCards => new BlockOptions(),
-            BlockType.CheckList => new BlockOptions { BulletChar = "✓" },
-            _ => new BlockOptions()
-        };
-    }
+        BlockType.Image => new() { Alignment = "center", MaxWidth = 600 },
+        BlockType.RichText => new(),
+        BlockType.KeyValueGrid => new() { BulletChar = "▸", Columns = 2 },
+        BlockType.DataTable => new() 
+        { 
+            Column1Header = "Spezifikation", 
+            Column2Header = "Wert",
+            ShowColumnHeaders = true,
+            AlternatingBackground = true
+        },
+        BlockType.FeatureCards => new(),
+        BlockType.CheckList => new() { BulletChar = "✓" },
+        _ => new()
+    };
 }
 
 /// <summary>
@@ -183,5 +171,16 @@ public static class BlockTypeExtensions
         BlockType.FeatureCards => "Pro Zeile: Kategorie | Optionen (getrennt mit │)",
         BlockType.CheckList => "Pro Zeile: Ein Eintrag",
         _ => "Inhalt"
+    };
+    
+    public static string GetDemoContent(this BlockType type, string blockTitle) => type switch
+    {
+        BlockType.Image => "https://placehold.co/600x400/1a1a1a/f5c518?text=Produktbild",
+        BlockType.RichText => $"**{blockTitle}** bietet herausragende Qualität und durchdachte Features.\n\nDie hochwertige Verarbeitung garantiert langlebige Zuverlässigkeit für den täglichen Einsatz.",
+        BlockType.KeyValueGrid => "Premium Qualität | Erstklassige Materialien und Verarbeitung\nInnovatives Design | Moderne Optik trifft Funktionalität\nEinfache Bedienung | Intuitive Handhabung für jeden\nLanglebigkeit | Robust und zuverlässig",
+        BlockType.DataTable => "Material | Aluminium / Kunststoff\nAbmessungen | 250 × 150 × 80 mm\nGewicht | 450 g\nFarbe | Schwarz\nAnschlüsse | USB-C, HDMI",
+        BlockType.FeatureCards => "Typ A | Standard │ Premium │ Pro\nTyp B | Basic │ Advanced",
+        BlockType.CheckList => "1× Hauptgerät\n1× USB-C Kabel\n1× Kurzanleitung\n1× Garantiekarte",
+        _ => ""
     };
 }
