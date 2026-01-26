@@ -5,6 +5,14 @@ using Markdig;
 
 namespace EbayTemplateGenerator.Services;
 
+public class SectionTitles
+{
+    public string Highlights { get; set; } = "Highlights";
+    public string TechnicalData { get; set; } = "Technische Daten";
+    public string Compatibility { get; set; } = "Kompatibilität";
+    public string DeliveryScope { get; set; } = "Lieferumfang";
+}
+
 public class TemplateGeneratorService
 {
     private readonly MarkdownPipeline _pipeline;
@@ -16,8 +24,9 @@ public class TemplateGeneratorService
             .Build();
     }
 
-    public string GenerateHtml(TemplateData data)
+    public string GenerateHtml(TemplateData data, SectionTitles? titles = null)
     {
+        titles ??= new SectionTitles();
         var sb = new StringBuilder();
         
         // Header comment
@@ -60,25 +69,25 @@ public class TemplateGeneratorService
         // Highlights
         if (!string.IsNullOrWhiteSpace(data.Highlights))
         {
-            sb.AppendLine(GenerateHighlightsSection(data));
+            sb.AppendLine(GenerateHighlightsSection(data, titles.Highlights));
         }
         
         // Technical Data
         if (!string.IsNullOrWhiteSpace(data.TechnicalData))
         {
-            sb.AppendLine(GenerateTechnicalDataSection(data));
+            sb.AppendLine(GenerateTechnicalDataSection(data, titles.TechnicalData));
         }
         
         // Compatibility
         if (!string.IsNullOrWhiteSpace(data.Compatibility))
         {
-            sb.AppendLine(GenerateCompatibilitySection(data));
+            sb.AppendLine(GenerateCompatibilitySection(data, titles.Compatibility));
         }
         
         // Delivery Scope
         if (!string.IsNullOrWhiteSpace(data.DeliveryScope))
         {
-            sb.AppendLine(GenerateDeliveryScopeSection(data));
+            sb.AppendLine(GenerateDeliveryScopeSection(data, titles.DeliveryScope));
         }
         
         // Footer
@@ -140,7 +149,7 @@ public class TemplateGeneratorService
 ";
     }
 
-    private string GenerateHighlightsSection(TemplateData data)
+    private string GenerateHighlightsSection(TemplateData data, string sectionTitle)
     {
         var lines = data.Highlights.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var sb = new StringBuilder();
@@ -150,7 +159,7 @@ public class TemplateGeneratorService
     <tr>
       <td style=""padding: 25px 30px;"">
         <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {data.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
-          ✦ Highlights
+          ✦ {HttpUtility.HtmlEncode(sectionTitle)}
         </div>
         
         <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">");
@@ -205,7 +214,7 @@ public class TemplateGeneratorService
         return sb.ToString();
     }
 
-    private string GenerateTechnicalDataSection(TemplateData data)
+    private string GenerateTechnicalDataSection(TemplateData data, string sectionTitle)
     {
         var lines = data.TechnicalData.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var sb = new StringBuilder();
@@ -215,7 +224,7 @@ public class TemplateGeneratorService
     <tr>
       <td style=""padding: 25px 30px;"">
         <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {data.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
-          ⚙ Technische Daten
+          ⚙ {HttpUtility.HtmlEncode(sectionTitle)}
         </div>
         
         <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: #fff; border-radius: 6px; overflow: hidden; border: 1px solid #e0e0e0;"">
@@ -249,7 +258,7 @@ public class TemplateGeneratorService
         return sb.ToString();
     }
 
-    private string GenerateCompatibilitySection(TemplateData data)
+    private string GenerateCompatibilitySection(TemplateData data, string sectionTitle)
     {
         var lines = data.Compatibility.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var sb = new StringBuilder();
@@ -268,7 +277,7 @@ public class TemplateGeneratorService
     <tr>
       <td style=""padding: 25px 30px;"">
         <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {data.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
-          🔧 Kompatibilität
+          🔧 {HttpUtility.HtmlEncode(sectionTitle)}
         </div>
         
         <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0;"">
@@ -304,7 +313,7 @@ public class TemplateGeneratorService
         return sb.ToString();
     }
 
-    private string GenerateDeliveryScopeSection(TemplateData data)
+    private string GenerateDeliveryScopeSection(TemplateData data, string sectionTitle)
     {
         var lines = data.DeliveryScope.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var sb = new StringBuilder();
@@ -314,7 +323,7 @@ public class TemplateGeneratorService
     <tr>
       <td style=""padding: 25px 30px;"">
         <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {data.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
-          📦 Lieferumfang
+          📦 {HttpUtility.HtmlEncode(sectionTitle)}
         </div>
         
         <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">");
@@ -339,21 +348,46 @@ public class TemplateGeneratorService
 
     private string GenerateFooter(TemplateData data)
     {
-        return $@"  <!-- Footer -->
+        var lines = data.Footer?.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Take(4)
+            .ToArray() ?? Array.Empty<string>();
+        
+        if (lines.Length == 0)
+        {
+            return $@"  <!-- Footer -->
   <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: linear-gradient(135deg, {data.PrimaryColor} 0%, {LightenColor(data.PrimaryColor, 0.1)} 100%); border-radius: 0 0 8px 8px;"">
     <tr>
-      <td width=""33%"" style=""padding: 18px 20px; text-align: left; color: #999; font-size: 13px;"">
-        <strong style=""color: {data.AccentColor};"">{GetFooterLabel(data.Footer1)}</strong> {GetFooterValue(data.Footer1)}
-      </td>
-      <td width=""34%"" style=""padding: 18px 20px; text-align: center; color: #999; font-size: 13px;"">
-        <strong style=""color: {data.AccentColor};"">{GetFooterLabel(data.Footer2)}</strong> {GetFooterValue(data.Footer2)}
-      </td>
-      <td width=""33%"" style=""padding: 18px 20px; text-align: right; color: #999; font-size: 13px;"">
-        <strong style=""color: {data.AccentColor};"">{GetFooterLabel(data.Footer3)}</strong> {GetFooterValue(data.Footer3)}
+      <td style=""padding: 18px 20px; text-align: center; color: #999; font-size: 13px;"">
+        &nbsp;
       </td>
     </tr>
   </table>
 ";
+        }
+        
+        var sb = new StringBuilder();
+        var widthPercent = 100 / lines.Length;
+        
+        sb.AppendLine($@"  <!-- Footer -->
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: linear-gradient(135deg, {data.PrimaryColor} 0%, {LightenColor(data.PrimaryColor, 0.1)} 100%); border-radius: 0 0 8px 8px;"">
+    <tr>");
+        
+        for (int i = 0; i < lines.Length; i++)
+        {
+            var alignment = lines.Length == 1 ? "center" : 
+                            i == 0 ? "left" : 
+                            i == lines.Length - 1 ? "right" : "center";
+            
+            sb.AppendLine($@"      <td width=""{widthPercent}%"" style=""padding: 18px 20px; text-align: {alignment}; color: #999; font-size: 13px;"">
+        <strong style=""color: {data.AccentColor};"">{GetFooterLabel(lines[i])}</strong> {GetFooterValue(lines[i])}
+      </td>");
+        }
+        
+        sb.AppendLine(@"    </tr>
+  </table>
+");
+        
+        return sb.ToString();
     }
 
     private static string GetFooterLabel(string footer)

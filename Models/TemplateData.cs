@@ -11,9 +11,7 @@ public class TemplateData
     public string TechnicalData { get; set; } = string.Empty;
     public string Compatibility { get; set; } = string.Empty;
     public string DeliveryScope { get; set; } = string.Empty;
-    public string Footer1 { get; set; } = string.Empty;
-    public string Footer2 { get; set; } = string.Empty;
-    public string Footer3 { get; set; } = string.Empty;
+    public string Footer { get; set; } = string.Empty;
     
     // Color settings
     public string PrimaryColor { get; set; } = "#1a1a1a";
@@ -56,9 +54,9 @@ iCUE LINK System Hub
 Montagematerial für Intel & AMD
 XTM70-Wärmeleitpaste (voraufgetragen)
 Dokumentation",
-            Footer1 = "SKU: CW-9061018-WW",
-            Footer2 = "Farbe: Schwarz",
-            Footer3 = "Garantie: 6 Jahre",
+            Footer = @"SKU: CW-9061018-WW
+Farbe: Schwarz
+Garantie: 6 Jahre",
             PrimaryColor = "#1a1a1a",
             AccentColor = "#f5c518",
             BackgroundColor = "#f8f9fa"

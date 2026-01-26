@@ -114,7 +114,10 @@
 
                     <!-- Highlights -->
                     <div class="form-section">
-                        <h2>✦ Highlights</h2>
+                        <div class="section-header">
+                            <h2>✦ <input type="text" class="section-title-input" @bind="sectionTitles.Highlights" /></h2>
+                            <button class="btn-clear" @onclick="() => data.Highlights = string.Empty" title="Inhalt löschen">×</button>
+                        </div>
                         <div class="form-group">
                             <label for="highlights">Pro Zeile: Titel | Beschreibung</label>
                             <textarea id="highlights" @bind="data.Highlights" rows="7" 
@@ -125,7 +128,10 @@
 
                     <!-- Technical Data -->
                     <div class="form-section">
-                        <h2>⚙ Technische Daten</h2>
+                        <div class="section-header">
+                            <h2>⚙ <input type="text" class="section-title-input" @bind="sectionTitles.TechnicalData" /></h2>
+                            <button class="btn-clear" @onclick="() => data.TechnicalData = string.Empty" title="Inhalt löschen">×</button>
+                        </div>
                         <div class="form-group">
                             <label for="technicalData">Pro Zeile: Spezifikation | Wert</label>
                             <textarea id="technicalData" @bind="data.TechnicalData" rows="8" 
@@ -136,7 +142,10 @@ Lüfter | 3× 120mm RX120 RGB"></textarea>
 
                     <!-- Compatibility -->
                     <div class="form-section">
-                        <h2>🔧 Kompatibilität</h2>
+                        <div class="section-header">
+                            <h2>🔧 <input type="text" class="section-title-input" @bind="sectionTitles.Compatibility" /></h2>
+                            <button class="btn-clear" @onclick="() => data.Compatibility = string.Empty" title="Inhalt löschen">×</button>
+                        </div>
                         <div class="form-group">
                             <label for="compatibility">Pro Zeile: Plattform | Sockel</label>
                             <textarea id="compatibility" @bind="data.Compatibility" rows="3" 
@@ -147,7 +156,10 @@ AMD | AM5 │ AM4"></textarea>
 
                     <!-- Delivery Scope -->
                     <div class="form-section">
-                        <h2>📦 Lieferumfang</h2>
+                        <div class="section-header">
+                            <h2>📦 <input type="text" class="section-title-input" @bind="sectionTitles.DeliveryScope" /></h2>
+                            <button class="btn-clear" @onclick="() => data.DeliveryScope = string.Empty" title="Inhalt löschen">×</button>
+                        </div>
                         <div class="form-group">
                             <label for="deliveryScope">Pro Zeile: Ein Artikel</label>
                             <textarea id="deliveryScope" @bind="data.DeliveryScope" rows="5" 
@@ -159,26 +171,36 @@ Montagematerial"></textarea>
 
                     <!-- Footer -->
                     <div class="form-section">
-                        <h2>🏷️ Fußzeile</h2>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="footer1">Links</label>
-                                <input type="text" id="footer1" @bind="data.Footer1" placeholder="SKU: ABC123" />
-                            </div>
-                            <div class="form-group">
-                                <label for="footer2">Mitte</label>
-                                <input type="text" id="footer2" @bind="data.Footer2" placeholder="Farbe: Schwarz" />
-                            </div>
-                            <div class="form-group">
-                                <label for="footer3">Rechts</label>
-                                <input type="text" id="footer3" @bind="data.Footer3" placeholder="Garantie: 2 Jahre" />
-                            </div>
+                        <div class="section-header">
+                            <h2>🏷️ Fußzeile</h2>
+                            <button class="btn-clear" @onclick="() => data.Footer = string.Empty" title="Inhalt löschen">×</button>
+                        </div>
+                        <div class="form-group">
+                            <label for="footer">Pro Zeile ein Eintrag, max. 4 Zeilen (Format: Label: Wert)</label>
+                            <textarea id="footer" @bind="data.Footer" @bind:after="ValidateFooter" rows="4" 
+                                      placeholder="SKU: ABC123
+Farbe: Schwarz
+Garantie: 2 Jahre
+EAN: 1234567890123"></textarea>
+                            <span class="char-count @(GetFooterLineCount() > 4 ? "over-limit" : "")">
+                                @GetFooterLineCount() / 4 Zeilen
+                            </span>
                         </div>
                     </div>
 
                     <!-- Colors -->
                     <div class="form-section">
-                        <h2>🎨 Farbschema</h2>
+                        <div class="section-header">
+                            <h2>🎨 Farbschema</h2>
+                            <div class="color-buttons">
+                                <button class="btn btn-small btn-secondary" @onclick="SaveColorScheme" title="Aktuelles Farbschema als Standard speichern">
+                                    💾 Speichern
+                                </button>
+                                <button class="btn btn-small btn-secondary" @onclick="LoadColorScheme" title="Gespeichertes Standard-Farbschema laden">
+                                    📂 Laden
+                                </button>
+                            </div>
+                        </div>
                         <div class="form-row color-row">
                             <div class="form-group color-picker-group">
                                 <label for="primaryColor">Primärfarbe</label>
@@ -271,6 +293,7 @@ Montagematerial"></textarea>
 
 @code {
     private TemplateData data = new();
+    private SectionTitles sectionTitles = new();
     private int currentPhase = 1;
     private string generatedHtml = string.Empty;
     private bool isSaving = false;
@@ -320,11 +343,77 @@ Montagematerial"></textarea>
     private void LoadDemo()
     {
         data = TemplateData.GetDemoData();
+        sectionTitles = new SectionTitles();
     }
 
     private void ResetAll()
     {
         data = new TemplateData();
+        sectionTitles = new SectionTitles();
+    }
+
+    private int GetFooterLineCount()
+    {
+        if (string.IsNullOrWhiteSpace(data.Footer)) return 0;
+        return data.Footer.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length;
+    }
+
+    private void ValidateFooter()
+    {
+        if (string.IsNullOrWhiteSpace(data.Footer)) return;
+        
+        var lines = data.Footer.Split('\n');
+        if (lines.Length > 4)
+        {
+            data.Footer = string.Join('\n', lines.Take(4));
+        }
+    }
+
+    private async Task SaveColorScheme()
+    {
+        var scheme = new ColorScheme
+        {
+            PrimaryColor = data.PrimaryColor,
+            AccentColor = data.AccentColor,
+            BackgroundColor = data.BackgroundColor
+        };
+        await LocalStorage.SetItemAsync("relexx-color-scheme", scheme);
+        await ShowNotification("✓ Farbschema als Standard gespeichert!", true);
+    }
+
+    private async Task LoadColorScheme()
+    {
+        try
+        {
+            var scheme = await LocalStorage.GetItemAsync<ColorScheme>("relexx-color-scheme");
+            if (scheme != null)
+            {
+                data.PrimaryColor = scheme.PrimaryColor;
+                data.AccentColor = scheme.AccentColor;
+                data.BackgroundColor = scheme.BackgroundColor;
+                await ShowNotification("✓ Standard-Farbschema geladen!", true);
+            }
+            else
+            {
+                await ShowNotification("Kein gespeichertes Farbschema gefunden.", false);
+            }
+        }
+        catch
+        {
+            await ShowNotification("Fehler beim Laden des Farbschemas.", false);
+        }
+    }
+
+    private async Task ShowNotification(string message, bool success)
+    {
+        notificationMessage = message;
+        copySuccess = success;
+        showCopyNotification = true;
+        StateHasChanged();
+        
+        await Task.Delay(3000);
+        showCopyNotification = false;
+        StateHasChanged();
     }
 
     private async Task CopyJsonSchema()
@@ -341,32 +430,26 @@ Montagematerial"></textarea>
   ""TechnicalData"": ""Spezifikation1 | Wert1\nSpezifikation2 | Wert2\nSpezifikation3 | Wert3"",
   ""Compatibility"": ""Plattform1 | Variante1 │ Variante2\nPlattform2 | Variante3 │ Variante4"",
   ""DeliveryScope"": ""Artikel 1\nArtikel 2\nArtikel 3"",
-  ""Footer1"": ""Label: Wert (z.B. SKU: ABC123)"",
-  ""Footer2"": ""Label: Wert (z.B. Farbe: Schwarz)"",
-  ""Footer3"": ""Label: Wert (z.B. Garantie: 2 Jahre)"",
+  ""Footer"": ""Label1: Wert1\nLabel2: Wert2\nLabel3: Wert3"",
   ""PrimaryColor"": ""#1a1a1a"",
   ""AccentColor"": ""#f5c518"",
   ""BackgroundColor"": ""#f8f9fa""
 }";
         
+        await CopyToClipboard(schema, "✓ JSON-Schema in Zwischenablage kopiert!");
+    }
+
+    private async Task CopyToClipboard(string text, string successMessage)
+    {
         try
         {
-            await JS.InvokeVoidAsync("navigator.clipboard.writeText", schema);
-            copySuccess = true;
-            notificationMessage = "✓ JSON-Schema in Zwischenablage kopiert!";
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            await ShowNotification(successMessage, true);
         }
         catch
         {
-            copySuccess = false;
-            notificationMessage = "✗ Kopieren fehlgeschlagen";
+            await ShowNotification("✗ Kopieren fehlgeschlagen", false);
         }
-        
-        showCopyNotification = true;
-        StateHasChanged();
-        
-        await Task.Delay(3000);
-        showCopyNotification = false;
-        StateHasChanged();
     }
 
     private async Task ExportJson()
@@ -422,7 +505,7 @@ Montagematerial"></textarea>
 
     private void GoToPreview()
     {
-        generatedHtml = TemplateGenerator.GenerateHtml(data);
+        generatedHtml = TemplateGenerator.GenerateHtml(data, sectionTitles);
         currentPhase = 2;
     }
 
@@ -438,24 +521,7 @@ Montagematerial"></textarea>
 
     private async Task CopyHtml()
     {
-        try
-        {
-            await JS.InvokeVoidAsync("navigator.clipboard.writeText", generatedHtml);
-            copySuccess = true;
-            notificationMessage = "✓ HTML in Zwischenablage kopiert!";
-        }
-        catch
-        {
-            copySuccess = false;
-            notificationMessage = "✗ Kopieren fehlgeschlagen";
-        }
-        
-        showCopyNotification = true;
-        StateHasChanged();
-        
-        await Task.Delay(3000);
-        showCopyNotification = false;
-        StateHasChanged();
+        await CopyToClipboard(generatedHtml, "✓ HTML in Zwischenablage kopiert!");
     }
 
     private async Task DownloadHtml()
