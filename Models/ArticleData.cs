@@ -59,9 +59,9 @@ public partial class ArticleData
               "_hint": "Fülle alle Felder aus. Das Ergebnis kann direkt importiert werden.",
               
               "Title": "Produktname (Hauptüberschrift)",
-              "Subtitle": "Kurzbeschreibung │ Artikelnummer",
+              "Subtitle": "Kurzbeschreibung | Artikelnummer",
               "MobileSummary": "Max. {{Constants.Limits.MaxMobileSummaryLength}} Zeichen für mobile Vorschau und Google Shopping",
-              "Footer": "SKU: ABC123\nFarbe: Schwarz\nGarantie: 2 Jahre (max. {{Constants.Limits.MaxFooterLines}} Zeilen)",
+              "Footer": "SKU: ABC123\nFarbe: Schwarz\nHerstellergarantie: 2 Jahre (max. {{Constants.Limits.MaxFooterLines}} Zeilen)",
               
               "BlockContents": {
             {{string.Join(",\n", blockSchemas)}}

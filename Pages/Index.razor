@@ -334,7 +334,7 @@
         article = new ArticleData
         {
             Title = "Premium Produkt XYZ-3000",
-            Subtitle = "Hochwertige Qualität │ Art.-Nr. XYZ-3000-BK",
+            Subtitle = "Hochwertige Qualität | Art.-Nr. XYZ-3000-BK",
             MobileSummary = "Das Premium Produkt XYZ-3000 überzeugt durch erstklassige Verarbeitung und innovative Features. Perfekt geeignet für anspruchsvolle Anwender, die Wert auf Qualität legen.",
             Footer = "SKU: XYZ-3000-BK\nFarbe: Schwarz\nGarantie: 2 Jahre",
             Layout = currentLayout
@@ -342,7 +342,7 @@
 
         foreach (var block in currentLayout.Blocks)
         {
-            article.SetBlockContent(block.Id, block.Type.GetDemoContent(block.Title));
+            article.SetBlockContent(block.Id, block.Type.GetDemoContent());
         }
     }
 
@@ -941,8 +941,8 @@
                     <p><strong>Import:</strong> @importedArticle?.Layout?.Name (@importedArticle?.Layout?.Blocks.Count Blöcke)</p>
                     
                     <div class="modal-actions">
-                        <button class="btn btn-primary" @onclick="ImportWithNewLayout">Layout übernehmen</button>
-                        <button class="btn btn-secondary" @onclick="ImportKeepLayout">Daten einpassen</button>
+                        <button class="btn btn-primary" @onclick="ImportWithNewLayout">Layout aus Datei übernehmen</button>
+                        <button class="btn btn-secondary" @onclick="ImportKeepLayout">Versuchen, Daten einzupassen</button>
                         <button class="btn btn-secondary" @onclick="() => showImportConflict = false">Abbrechen</button>
                     </div>
                 </div>

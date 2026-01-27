@@ -58,7 +58,7 @@ public class LayoutTemplate
     }
     
     /// <summary>
-    /// Standard-Layout mit allen typischen eBay-Blöcken
+    /// Standard-Layout mit allen typischen Template-Blöcken
     /// </summary>
     public static LayoutTemplate CreateStandard() => new()
     {

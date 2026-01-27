@@ -157,7 +157,7 @@ public static class BlockTypeExtensions
         BlockType.RichText => "**Fett** und *kursiv* werden unterstützt...",
         BlockType.KeyValueGrid => "Titel | Beschreibung\nTitel 2 | Beschreibung 2",
         BlockType.DataTable => "Eigenschaft | Wert\nEigenschaft 2 | Wert 2",
-        BlockType.FeatureCards => "Kategorie | Option 1 │ Option 2\nKategorie 2 | Option 3",
+        BlockType.FeatureCards => "Kategorie | Option 1, Option 2\nKategorie 2 | Option 3",
         BlockType.CheckList => "Artikel 1\nArtikel 2\nArtikel 3",
         _ => ""
     };
@@ -168,18 +168,18 @@ public static class BlockTypeExtensions
         BlockType.RichText => "Text (Markdown unterstützt)",
         BlockType.KeyValueGrid => "Pro Zeile: Titel | Beschreibung",
         BlockType.DataTable => "Pro Zeile: Eigenschaft | Wert",
-        BlockType.FeatureCards => "Pro Zeile: Kategorie | Optionen (getrennt mit │)",
+        BlockType.FeatureCards => "Pro Zeile: Kategorie | Optionen",
         BlockType.CheckList => "Pro Zeile: Ein Eintrag",
         _ => "Inhalt"
     };
     
-    public static string GetDemoContent(this BlockType type, string blockTitle) => type switch
+    public static string GetDemoContent(this BlockType type) => type switch
     {
         BlockType.Image => "https://placehold.co/600x400/1a1a1a/f5c518?text=Produktbild",
-        BlockType.RichText => $"**{blockTitle}** bietet herausragende Qualität und durchdachte Features.\n\nDie hochwertige Verarbeitung garantiert langlebige Zuverlässigkeit für den täglichen Einsatz.",
+        BlockType.RichText => $"**Das Produkt** bietet herausragende Qualität und durchdachte Features.\n\nDie hochwertige Verarbeitung garantiert langlebige Zuverlässigkeit für den täglichen Einsatz.",
         BlockType.KeyValueGrid => "Premium Qualität | Erstklassige Materialien und Verarbeitung\nInnovatives Design | Moderne Optik trifft Funktionalität\nEinfache Bedienung | Intuitive Handhabung für jeden\nLanglebigkeit | Robust und zuverlässig",
         BlockType.DataTable => "Material | Aluminium / Kunststoff\nAbmessungen | 250 × 150 × 80 mm\nGewicht | 450 g\nFarbe | Schwarz\nAnschlüsse | USB-C, HDMI",
-        BlockType.FeatureCards => "Typ A | Standard │ Premium │ Pro\nTyp B | Basic │ Advanced",
+        BlockType.FeatureCards => "Typ A | Standard, Premium, Pro\nTyp B | Basic, Advanced",
         BlockType.CheckList => "1× Hauptgerät\n1× USB-C Kabel\n1× Kurzanleitung\n1× Garantiekarte",
         _ => ""
     };
