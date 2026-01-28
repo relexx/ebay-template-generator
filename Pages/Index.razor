@@ -390,18 +390,22 @@
         {
             await using var stream = e.File.OpenReadStream(Constants.FileLimits.MaxImportSizeBytes);
             importedArticle = await JsonSerializer.DeserializeAsync<ArticleData>(stream);
-            
+
             if (importedArticle is null) return;
-            
-            if (!currentLayout.IsCompatibleWith(importedArticle.Layout))
-            {
-                showImportConflict = true;
-            }
-            else
+
+            // Match by layout ID (for AI-generated imports from schema) or by full compatibility
+            var layoutIdMatches = importedArticle.Layout?.Id == currentLayout.Id;
+            var isCompatible = currentLayout.IsCompatibleWith(importedArticle.Layout);
+
+            if (layoutIdMatches || isCompatible)
             {
                 article = importedArticle;
                 article.Layout = currentLayout;
                 await ShowNotification("✓ Artikel importiert!", true);
+            }
+            else
+            {
+                showImportConflict = true;
             }
         }
         catch (Exception ex)
