@@ -68,6 +68,7 @@ public class TemplateGeneratorService
                 BlockType.DataTable => GenerateDataTableBlock(block, content, colors),
                 BlockType.FeatureCards => GenerateFeatureCardsBlock(block, content, colors),
                 BlockType.CheckList => GenerateCheckListBlock(block, content, colors),
+                BlockType.FixedText => GenerateFixedTextBlock(block, content, colors),
                 _ => string.Empty
             };
             
@@ -293,7 +294,7 @@ public class TemplateGeneratorService
     {
         var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var bullet = block.Options.BulletChar;
-        
+
         var sb = new StringBuilder();
         sb.AppendLine($@"  <!-- {block.Title} -->
   <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {colors.BackgroundColor}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
@@ -323,6 +324,24 @@ public class TemplateGeneratorService
   </table>
 ");
         return sb.ToString();
+    }
+
+    private string GenerateFixedTextBlock(BlockDefinition block, string content, ColorScheme colors)
+    {
+        // FixedText uses the same rendering as RichText (Markdown support)
+        var html = Markdown.ToHtml(content, _pipeline);
+        html = html.Replace("<p>", "<p style=\"margin: 0 0 15px 0; font-size: 15px; color: #333;\">");
+        html = html.Replace("<strong>", $"<strong style=\"color: {colors.PrimaryColor};\">");
+
+        return $@"  <!-- {block.Title} (Fester Text) -->
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {colors.BackgroundColor}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
+    <tr>
+      <td style=""padding: 25px 30px;"">
+        {html}
+      </td>
+    </tr>
+  </table>
+";
     }
 
     private string GenerateFooter(ArticleData article, ColorScheme colors)

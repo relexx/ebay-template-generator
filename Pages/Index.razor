@@ -171,6 +171,7 @@
         currentLayout = layouts.Find(l => l.Id == selectedLayoutId) ?? layouts[0];
         selectedBlockId = null;
         article.Layout = currentLayout;
+        PrefillFixedTextBlocks();
         await InitSortable();
     }
 
@@ -253,6 +254,13 @@
         currentLayout.Blocks.Add(block);
         selectedBlockId = block.Id;
         showAddBlockDialog = false;
+
+        // Pre-fill FixedText block with default content
+        if (type == BlockType.FixedText)
+        {
+            article.SetBlockContent(block.Id, block.Options.FixedContent);
+        }
+
         await SaveLayouts();
         await InitSortable();
     }
@@ -320,6 +328,7 @@
         {
             article = new() { Layout = currentLayout };
         }
+        PrefillFixedTextBlocks();
     }
 
     private async Task SaveArticle()
@@ -342,16 +351,38 @@
 
         foreach (var block in currentLayout.Blocks)
         {
-            article.SetBlockContent(block.Id, block.Type.GetDemoContent());
+            // FixedText blocks use content from layout, others use demo content
+            var content = block.Type == BlockType.FixedText
+                ? block.Options.FixedContent
+                : block.Type.GetDemoContent();
+            article.SetBlockContent(block.Id, content);
         }
     }
 
-    private void ResetArticle() => article = new() { Layout = currentLayout };
+    private void ResetArticle()
+    {
+        article = new() { Layout = currentLayout };
+        PrefillFixedTextBlocks();
+    }
 
     private void SetContent(string blockId, ChangeEventArgs e) 
         => article.SetBlockContent(blockId, e.Value?.ToString() ?? string.Empty);
 
     private void ClearBlock(string blockId) => article.ClearBlockContent(blockId);
+
+    /// <summary>
+    /// Pre-fills FixedText blocks with content from layout if empty
+    /// </summary>
+    private void PrefillFixedTextBlocks()
+    {
+        foreach (var block in currentLayout.Blocks.Where(b => b.Type == BlockType.FixedText))
+        {
+            if (string.IsNullOrEmpty(article.GetBlockContent(block.Id)))
+            {
+                article.SetBlockContent(block.Id, block.Options.FixedContent);
+            }
+        }
+    }
 
     private async Task UploadImage(InputFileChangeEventArgs e, string blockId)
     {
@@ -401,6 +432,7 @@
             {
                 article = importedArticle;
                 article.Layout = currentLayout;
+                PrefillFixedTextBlocks();
                 await ShowNotification("✓ Artikel importiert!", true);
             }
             else
@@ -417,17 +449,18 @@
     private async Task ImportWithNewLayout()
     {
         if (importedArticle?.Layout is null) return;
-        
+
         if (!layouts.Exists(l => l.Id == importedArticle.Layout.Id))
         {
             importedArticle.Layout.IsDefault = false;
             layouts.Add(importedArticle.Layout);
             await SaveLayouts();
         }
-        
+
         selectedLayoutId = importedArticle.Layout.Id;
         currentLayout = importedArticle.Layout;
         article = importedArticle;
+        PrefillFixedTextBlocks();
         showImportConflict = false;
         await ShowNotification("✓ Artikel mit Layout importiert!", true);
     }
@@ -435,12 +468,12 @@
     private async Task ImportKeepLayout()
     {
         if (importedArticle is null) return;
-        
+
         article.Title = importedArticle.Title;
         article.Subtitle = importedArticle.Subtitle;
         article.MobileSummary = importedArticle.MobileSummary;
         article.Footer = importedArticle.Footer;
-        
+
         foreach (var block in currentLayout.Blocks)
         {
             if (importedArticle.BlockContents.TryGetValue(block.Id, out var content))
@@ -448,7 +481,8 @@
                 article.SetBlockContent(block.Id, content);
             }
         }
-        
+
+        PrefillFixedTextBlocks();
         showImportConflict = false;
         await ShowNotification("✓ Daten importiert", true);
     }
@@ -739,6 +773,16 @@
             <div class="editor-group">
                 <label>Max. Breite (px)</label>
                 <input type="number" @bind="block.Options.MaxWidth" @bind:after="SaveLayouts" min="100" max="800" />
+            </div>
+        }
+
+        @if (block.Type == BlockType.FixedText)
+        {
+            <div class="editor-group">
+                <label>Vorlagen-Text (Markdown)</label>
+                <textarea rows="6" @bind="block.Options.FixedContent" @bind:after="SaveLayouts"
+                          placeholder="Fester Text, der im Layout gespeichert wird..."></textarea>
+                <small class="hint">Dieser Text wird als Standardwert für neue Artikel verwendet.</small>
             </div>
         }
     };

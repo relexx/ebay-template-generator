@@ -21,7 +21,10 @@ public enum BlockType
     FeatureCards,
     
     /// <summary>Aufzählungsliste mit Häkchen/Punkten</summary>
-    CheckList
+    CheckList,
+
+    /// <summary>Fester Text aus dem Layout (Markdown, mit Standardwert)</summary>
+    FixedText
 }
 
 /// <summary>
@@ -82,6 +85,9 @@ public class BlockOptions
     // === Image Optionen ===
     public string Alignment { get; set; } = "center";
     public int MaxWidth { get; set; } = 600;
+
+    // === FixedText Optionen ===
+    public string FixedContent { get; set; } = string.Empty;
     
     public BlockOptions Clone() => new()
     {
@@ -92,7 +98,8 @@ public class BlockOptions
         ShowColumnHeaders = ShowColumnHeaders,
         Columns = Columns,
         Alignment = Alignment,
-        MaxWidth = MaxWidth
+        MaxWidth = MaxWidth,
+        FixedContent = FixedContent
     };
     
     public static BlockOptions CreateDefault(BlockType type) => type switch
@@ -109,6 +116,7 @@ public class BlockOptions
         },
         BlockType.FeatureCards => new(),
         BlockType.CheckList => new() { BulletChar = "✓" },
+        BlockType.FixedText => new() { FixedContent = "**Hinweis:** Standardtext hier eingeben..." },
         _ => new()
     };
 }
@@ -126,6 +134,7 @@ public static class BlockTypeExtensions
         BlockType.DataTable => "⚙",
         BlockType.FeatureCards => "🔧",
         BlockType.CheckList => "📦",
+        BlockType.FixedText => "📌",
         _ => "📄"
     };
     
@@ -137,6 +146,7 @@ public static class BlockTypeExtensions
         BlockType.DataTable => "Technische Daten",
         BlockType.FeatureCards => "Kompatibilität",
         BlockType.CheckList => "Lieferumfang",
+        BlockType.FixedText => "Hinweis",
         _ => "Block"
     };
     
@@ -148,6 +158,7 @@ public static class BlockTypeExtensions
         BlockType.DataTable => "Datentabelle",
         BlockType.FeatureCards => "Feature-Karten",
         BlockType.CheckList => "Aufzählungsliste",
+        BlockType.FixedText => "Fester Text",
         _ => "Block"
     };
     
@@ -159,6 +170,7 @@ public static class BlockTypeExtensions
         BlockType.DataTable => "Eigenschaft | Wert\nEigenschaft 2 | Wert 2",
         BlockType.FeatureCards => "Kategorie | Option 1, Option 2\nKategorie 2 | Option 3",
         BlockType.CheckList => "Artikel 1\nArtikel 2\nArtikel 3",
+        BlockType.FixedText => "Text aus Layout-Vorlage (editierbar)",
         _ => ""
     };
     
@@ -170,6 +182,7 @@ public static class BlockTypeExtensions
         BlockType.DataTable => "Pro Zeile: Eigenschaft | Wert",
         BlockType.FeatureCards => "Pro Zeile: Kategorie | Optionen",
         BlockType.CheckList => "Pro Zeile: Ein Eintrag",
+        BlockType.FixedText => "Fester Text (Markdown, aus Layout vorbelegt)",
         _ => "Inhalt"
     };
     
@@ -181,6 +194,7 @@ public static class BlockTypeExtensions
         BlockType.DataTable => "Material | Aluminium / Kunststoff\nAbmessungen | 250 × 150 × 80 mm\nGewicht | 450 g\nFarbe | Schwarz\nAnschlüsse | USB-C, HDMI",
         BlockType.FeatureCards => "Typ A | Standard, Premium, Pro\nTyp B | Basic, Advanced",
         BlockType.CheckList => "1× Hauptgerät\n1× USB-C Kabel\n1× Kurzanleitung\n1× Garantiekarte",
+        BlockType.FixedText => "**Hinweis:** Dies ist ein fester Textbaustein aus dem Layout.",
         _ => ""
     };
 }

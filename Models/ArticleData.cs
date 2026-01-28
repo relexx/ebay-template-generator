@@ -48,7 +48,9 @@ public partial class ArticleData
     
     public static string GenerateJsonSchema(LayoutTemplate layout)
     {
+        // Exclude FixedText blocks - they get their content from the layout
         var blockSchemas = layout.Blocks
+            .Where(b => b.Type != BlockType.FixedText)
             .OrderBy(b => b.Order)
             .Select(b =>
             {
