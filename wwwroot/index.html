@@ -60,11 +60,11 @@
         window.initSortable = function(elementId, dotNetHelper) {
             const el = document.getElementById(elementId);
             if (!el) return;
-            
+
             if (el._sortable) {
                 el._sortable.destroy();
             }
-            
+
             el._sortable = new Sortable(el, {
                 animation: 150,
                 handle: '.drag-handle',
@@ -72,7 +72,26 @@
                 chosenClass: 'sortable-chosen',
                 dragClass: 'sortable-drag',
                 onEnd: function(evt) {
-                    dotNetHelper.invokeMethodAsync('OnBlockReordered', evt.oldIndex, evt.newIndex);
+                    const oldIndex = evt.oldIndex;
+                    const newIndex = evt.newIndex;
+                    if (oldIndex === newIndex) return;
+
+                    // Revert DOM to original order - Blazor will re-render correctly
+                    const parent = evt.from;
+                    const item = evt.item;
+                    const children = parent.children;
+
+                    if (oldIndex < newIndex) {
+                        // Item was moved down, put it back before the element now at oldIndex
+                        parent.insertBefore(item, children[oldIndex]);
+                    } else {
+                        // Item was moved up, put it back after the element now at oldIndex-1
+                        const refNode = children[oldIndex + 1] || null;
+                        parent.insertBefore(item, refNode);
+                    }
+
+                    // Notify .NET to update data and trigger Blazor re-render
+                    dotNetHelper.invokeMethodAsync('OnBlockReordered', oldIndex, newIndex);
                 }
             });
         };

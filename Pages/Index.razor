@@ -279,10 +279,17 @@
     private async Task OnBlockTypeChanged()
     {
         if (SelectedBlock is null) return;
-        
+
         SelectedBlock.Options = BlockOptions.CreateDefault(SelectedBlock.Type);
         SelectedBlock.Icon = SelectedBlock.Type.GetDefaultIcon();
         SelectedBlock.Title = SelectedBlock.Type.GetDefaultTitle();
+        await SaveLayouts();
+    }
+
+    private async Task OnFixedContentChanged(BlockDefinition block)
+    {
+        // Sync layout's FixedContent to article content
+        article.SetBlockContent(block.Id, block.Options.FixedContent);
         await SaveLayouts();
     }
 
@@ -368,7 +375,19 @@
     private void SetContent(string blockId, ChangeEventArgs e) 
         => article.SetBlockContent(blockId, e.Value?.ToString() ?? string.Empty);
 
-    private void ClearBlock(string blockId) => article.ClearBlockContent(blockId);
+    private void ClearBlock(string blockId)
+    {
+        var block = currentLayout.Blocks.FirstOrDefault(b => b.Id == blockId);
+        if (block?.Type == BlockType.FixedText)
+        {
+            // Reset FixedText to layout default instead of clearing
+            article.SetBlockContent(blockId, block.Options.FixedContent);
+        }
+        else
+        {
+            article.ClearBlockContent(blockId);
+        }
+    }
 
     /// <summary>
     /// Pre-fills FixedText blocks with content from layout if empty
@@ -626,7 +645,8 @@
                         <div class="block-list" id="block-list">
                             @foreach (var block in currentLayout.Blocks.OrderBy(b => b.Order))
                             {
-                                <div class="block-item @(selectedBlockId == block.Id ? "selected" : "")"
+                                <div @key="block.Id"
+                                     class="block-item @(selectedBlockId == block.Id ? "selected" : "")"
                                      data-id="@block.Id"
                                      @onclick="() => SelectBlock(block)">
                                     <span class="drag-handle">☰</span>
@@ -780,7 +800,7 @@
         {
             <div class="editor-group">
                 <label>Vorlagen-Text (Markdown)</label>
-                <textarea rows="6" @bind="block.Options.FixedContent" @bind:after="SaveLayouts"
+                <textarea rows="6" @bind="block.Options.FixedContent" @bind:after="() => OnFixedContentChanged(block)"
                           placeholder="Fester Text, der im Layout gespeichert wird..."></textarea>
                 <small class="hint">Dieser Text wird als Standardwert für neue Artikel verwendet.</small>
             </div>

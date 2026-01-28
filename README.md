@@ -11,7 +11,7 @@ Eine moderne Blazor WebAssembly Anwendung zur Erstellung professioneller, eBay-k
 ## ✨ Features
 
 ### Modulares Block-System
-- **6 Block-Typen**: Bild, Fließtext (Markdown), Stichwort-Karten, Datentabelle, Feature-Karten, Aufzählungsliste
+- **7 Block-Typen**: Bild, Fließtext (Markdown), Stichwort-Karten, Datentabelle, Feature-Karten, Aufzählungsliste, Fester Text
 - **Drag & Drop**: Blöcke per SortableJS frei anordnen
 - **Typ-spezifische Optionen**: Spaltenanzahl, Aufzählungszeichen, Tabellenheader, Bildausrichtung u.v.m.
 - **Dynamische Layouts**: Beliebig viele Blöcke hinzufügen, bearbeiten oder entfernen
@@ -123,6 +123,12 @@ ebay-template-generator/
 ### 📦 Aufzählungsliste (CheckList)
 - Ein Eintrag pro Zeile
 - Optionen: Aufzählungszeichen (✓, •, ▸, ★, etc.)
+
+### 📌 Fester Text (FixedText)
+- Markdown-Unterstützung wie Fließtext
+- Vorlagen-Text wird im Layout gespeichert
+- Ideal für wiederkehrende Textbausteine (Hinweise, AGB, Versandinfos)
+- Pro Artikel editierbar, wird beim Zurücksetzen auf Layout-Standard zurückgesetzt
 
 ---
 
