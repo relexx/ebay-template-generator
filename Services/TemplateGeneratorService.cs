@@ -55,26 +55,28 @@ public class TemplateGeneratorService
         sb.AppendLine(GenerateHeader(article, colors));
         
         // Dynamic Blocks
+        var blockIndex = 0;
         foreach (var block in layout.Blocks.OrderBy(b => b.Order))
         {
             var content = article.GetBlockContent(block.Id);
             if (string.IsNullOrWhiteSpace(content)) continue;
-            
+
             var html = block.Type switch
             {
-                BlockType.Image => GenerateImageBlock(block, content, colors),
-                BlockType.RichText => GenerateRichTextBlock(block, content, colors),
-                BlockType.KeyValueGrid => GenerateKeyValueGridBlock(block, content, colors),
-                BlockType.DataTable => GenerateDataTableBlock(block, content, colors),
-                BlockType.FeatureCards => GenerateFeatureCardsBlock(block, content, colors),
-                BlockType.CheckList => GenerateCheckListBlock(block, content, colors),
-                BlockType.FixedText => GenerateFixedTextBlock(block, content, colors),
+                BlockType.Image => GenerateImageBlock(block, content, colors, blockIndex),
+                BlockType.RichText => GenerateRichTextBlock(block, content, colors, blockIndex),
+                BlockType.KeyValueGrid => GenerateKeyValueGridBlock(block, content, colors, blockIndex),
+                BlockType.DataTable => GenerateDataTableBlock(block, content, colors, blockIndex),
+                BlockType.FeatureCards => GenerateFeatureCardsBlock(block, content, colors, blockIndex),
+                BlockType.CheckList => GenerateCheckListBlock(block, content, colors, blockIndex),
+                BlockType.FixedText => GenerateFixedTextBlock(block, content, colors, blockIndex),
                 _ => string.Empty
             };
-            
+
             if (!string.IsNullOrEmpty(html))
             {
                 sb.AppendLine(html);
+                blockIndex++;
             }
         }
         
@@ -105,13 +107,13 @@ public class TemplateGeneratorService
 ";
     }
 
-    private string GenerateImageBlock(BlockDefinition block, string content, ColorScheme colors)
+    private string GenerateImageBlock(BlockDefinition block, string content, ColorScheme colors, int blockIndex)
     {
         var alignment = block.Options.Alignment;
         var maxWidth = block.Options.MaxWidth;
-        
+
         return $@"  <!-- {block.Title} -->
-  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: #ffffff; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
     <tr>
       <td style=""padding: 20px; text-align: {alignment};"">
         <img src=""{Encode(content)}"" alt=""Produktbild"" style=""max-width: 100%; width: {maxWidth}px; height: auto; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"">
@@ -121,14 +123,14 @@ public class TemplateGeneratorService
 ";
     }
 
-    private string GenerateRichTextBlock(BlockDefinition block, string content, ColorScheme colors)
+    private string GenerateRichTextBlock(BlockDefinition block, string content, ColorScheme colors, int blockIndex)
     {
         var html = Markdown.ToHtml(content, _pipeline);
         html = html.Replace("<p>", "<p style=\"margin: 0 0 15px 0; font-size: 15px; color: #333;\">");
         html = html.Replace("<strong>", $"<strong style=\"color: {colors.PrimaryColor};\">");
-        
+
         return $@"  <!-- {block.Title} -->
-  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {colors.BackgroundColor}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
     <tr>
       <td style=""padding: 25px 30px;"">
         {html}
@@ -138,16 +140,16 @@ public class TemplateGeneratorService
 ";
     }
 
-    private string GenerateKeyValueGridBlock(BlockDefinition block, string content, ColorScheme colors)
+    private string GenerateKeyValueGridBlock(BlockDefinition block, string content, ColorScheme colors, int blockIndex)
     {
         var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var bullet = block.Options.BulletChar;
         var columns = Math.Max(1, Math.Min(3, block.Options.Columns));
         var widthPercent = 100 / columns;
-        
+
         var sb = new StringBuilder();
         sb.AppendLine($@"  <!-- {block.Title} -->
-  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: #ffffff; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
     <tr>
       <td style=""padding: 25px 30px;"">
         <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
@@ -190,17 +192,17 @@ public class TemplateGeneratorService
         return sb.ToString();
     }
 
-    private string GenerateDataTableBlock(BlockDefinition block, string content, ColorScheme colors)
+    private string GenerateDataTableBlock(BlockDefinition block, string content, ColorScheme colors, int blockIndex)
     {
         var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var col1 = block.Options.Column1Header;
         var col2 = block.Options.Column2Header;
         var showHeaders = block.Options.ShowColumnHeaders;
         var zebra = block.Options.AlternatingBackground;
-        
+
         var sb = new StringBuilder();
         sb.AppendLine($@"  <!-- {block.Title} -->
-  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {colors.BackgroundColor}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
     <tr>
       <td style=""padding: 25px 30px;"">
         <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
@@ -239,7 +241,7 @@ public class TemplateGeneratorService
         return sb.ToString();
     }
 
-    private string GenerateFeatureCardsBlock(BlockDefinition block, string content, ColorScheme colors)
+    private string GenerateFeatureCardsBlock(BlockDefinition block, string content, ColorScheme colors, int blockIndex)
     {
         var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var cardGradients = new[]
@@ -250,10 +252,10 @@ public class TemplateGeneratorService
             ("linear-gradient(135deg, #ff6600 0%, #ffaa00 100%)", "#ffffff"),
             ("linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)", "#ffffff")
         };
-        
+
         var sb = new StringBuilder();
         sb.AppendLine($@"  <!-- {block.Title} -->
-  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: #ffffff; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
     <tr>
       <td style=""padding: 25px 30px;"">
         <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
@@ -290,14 +292,14 @@ public class TemplateGeneratorService
         return sb.ToString();
     }
 
-    private string GenerateCheckListBlock(BlockDefinition block, string content, ColorScheme colors)
+    private string GenerateCheckListBlock(BlockDefinition block, string content, ColorScheme colors, int blockIndex)
     {
         var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var bullet = block.Options.BulletChar;
 
         var sb = new StringBuilder();
         sb.AppendLine($@"  <!-- {block.Title} -->
-  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {colors.BackgroundColor}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
     <tr>
       <td style=""padding: 25px 30px;"">
         <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
@@ -326,15 +328,14 @@ public class TemplateGeneratorService
         return sb.ToString();
     }
 
-    private string GenerateFixedTextBlock(BlockDefinition block, string content, ColorScheme colors)
+    private string GenerateFixedTextBlock(BlockDefinition block, string content, ColorScheme colors, int blockIndex)
     {
-        // FixedText uses the same rendering as RichText (Markdown support)
         var html = Markdown.ToHtml(content, _pipeline);
         html = html.Replace("<p>", "<p style=\"margin: 0 0 15px 0; font-size: 15px; color: #333;\">");
         html = html.Replace("<strong>", $"<strong style=\"color: {colors.PrimaryColor};\">");
 
         return $@"  <!-- {block.Title} (Fester Text) -->
-  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {colors.BackgroundColor}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
     <tr>
       <td style=""padding: 25px 30px;"">
         {html}
@@ -383,6 +384,9 @@ public class TemplateGeneratorService
 ");
         return sb.ToString();
     }
+
+    private static string BlockBackground(int blockIndex, ColorScheme colors)
+        => blockIndex % 2 == 0 ? "#ffffff" : colors.BackgroundColor;
 
     private static string Encode(string? text) => HttpUtility.HtmlEncode(text ?? "");
 
