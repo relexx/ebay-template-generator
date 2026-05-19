@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dotnet build:*)"
+      "Bash(dotnet build:*)",
+      "Bash(dotnet --version)",
+      "Bash(dotnet list *)",
+      "Bash(which dotnet *)",
+      "Read(//usr/**)",
+      "Read(//home/relexx/.dotnet/**)",
+      "Bash(find / -name \"dotnet\" -maxdepth 6 -type f)"
     ]
   }
 }

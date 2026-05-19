@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Blazored.LocalStorage;
 using EbayTemplateGenerator;
 using EbayTemplateGenerator.Services;
 
@@ -9,7 +8,7 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
-builder.Services.AddBlazoredLocalStorage();
+builder.Services.AddLocalStorageServices();
 
 // Services
 builder.Services.AddScoped<TemplateGeneratorService>();

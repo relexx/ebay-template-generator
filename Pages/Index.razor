@@ -3,7 +3,7 @@
 @using EbayTemplateGenerator.Services
 @using System.Text.Json
 @inject TemplateGeneratorService TemplateGenerator
-@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject ILocalStorageService LocalStorage
 @inject IJSRuntime JS
 @implements IAsyncDisposable
 
@@ -138,18 +138,18 @@
     }
 
     // ═══════════════ LAYOUT MANAGEMENT ═══════════════
-    private async Task LoadLayouts()
+    private Task LoadLayouts()
     {
         try
         {
-            var saved = await LocalStorage.GetItemAsync<List<LayoutTemplate>>(Constants.Storage.LayoutsKey);
+            var saved = LocalStorage.GetItem<List<LayoutTemplate>>(Constants.Storage.LayoutsKey);
             layouts = saved ?? new();
-            
+
             if (!layouts.Exists(l => l.IsDefault))
             {
                 layouts.Insert(0, LayoutTemplate.CreateStandard());
             }
-            
+
             currentLayout = layouts.Find(l => l.Id == selectedLayoutId) ?? layouts[0];
             selectedLayoutId = currentLayout.Id;
         }
@@ -158,12 +158,14 @@
             layouts = new() { LayoutTemplate.CreateStandard() };
             currentLayout = layouts[0];
         }
+        return Task.CompletedTask;
     }
 
-    private async Task SaveLayouts()
+    private Task SaveLayouts()
     {
         currentLayout.ModifiedAt = DateTime.UtcNow;
-        await LocalStorage.SetItemAsync(Constants.Storage.LayoutsKey, layouts);
+        LocalStorage.SetItem(Constants.Storage.LayoutsKey, layouts);
+        return Task.CompletedTask;
     }
 
     private async Task OnLayoutSelected()
@@ -312,11 +314,11 @@
     }
 
     // ═══════════════ ARTICLE MANAGEMENT ═══════════════
-    private async Task LoadArticle()
+    private Task LoadArticle()
     {
         try
         {
-            var saved = await LocalStorage.GetItemAsync<ArticleData>(Constants.Storage.ArticleKey);
+            var saved = LocalStorage.GetItem<ArticleData>(Constants.Storage.ArticleKey);
             if (saved is not null)
             {
                 article = saved;
@@ -336,13 +338,15 @@
             article = new() { Layout = currentLayout };
         }
         PrefillFixedTextBlocks();
+        return Task.CompletedTask;
     }
 
-    private async Task SaveArticle()
+    private Task SaveArticle()
     {
         article.Layout = currentLayout;
         article.ModifiedAt = DateTime.UtcNow;
-        await LocalStorage.SetItemAsync(Constants.Storage.ArticleKey, article);
+        LocalStorage.SetItem(Constants.Storage.ArticleKey, article);
+        return Task.CompletedTask;
     }
 
     private void LoadDemo()
