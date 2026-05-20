@@ -40,6 +40,7 @@ public partial class Index
     private bool _showSettings;
     private bool _showActionsOverflow;
     private bool _showStepperFlyout;
+    private bool _showAbout;
 
     private string _theme = "dark";
     private string _density = "comfortable";
@@ -141,7 +142,22 @@ public partial class Index
         catch { }
 
         await ApplySettings();
+
+        var firstRun = await LocalStorage.GetItemAsync<string>(Constants.Storage.FirstRunKey);
+        if (firstRun is null)
+        {
+            await LocalStorage.SetItemAsync(Constants.Storage.FirstRunKey, "1");
+            _showAbout = true;
+        }
     }
+
+    private void OpenAbout()
+    {
+        _showSettings = false;
+        _showAbout = true;
+    }
+
+    private void CloseAbout() => _showAbout = false;
 
     private async Task ApplySettings()
     {

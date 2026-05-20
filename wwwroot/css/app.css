@@ -1832,6 +1832,113 @@ textarea {
     justify-content: flex-end;
 }
 
+/* About Dialog */
+.modal-about { max-width: 560px; }
+
+.about-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.about-logo { font-size: 2rem; line-height: 1; }
+.about-header h3 { margin: 0 0 2px 0; }
+.about-version {
+    font-size: 0.76rem;
+    color: var(--color-text-muted);
+}
+
+.about-welcome {
+    margin: 0 0 18px 0;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.about-features {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    margin-bottom: 18px;
+}
+.about-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+}
+.about-feature strong { color: var(--color-text); }
+.about-feature-num {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    color: oklch(0.2 0 0);
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+}
+
+.about-deps {
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    margin-bottom: 4px;
+}
+.about-deps-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+}
+.about-dep {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    padding: 4px 0;
+}
+.about-dep + .about-dep {
+    border-top: 1px solid var(--color-border);
+}
+.about-dep strong { color: var(--color-text); }
+
+/* Settings: About button */
+.settings-section-about {
+    border-top: 1px solid var(--color-border);
+    padding-top: 6px;
+    margin-top: 2px;
+}
+.settings-about-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 5px 6px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: var(--transition);
+}
+.settings-about-btn:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text);
+}
+
 /* Block Type List in Modal */
 .block-type-list {
     display: grid;

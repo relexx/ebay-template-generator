@@ -127,6 +127,11 @@
                         </button>
                     </div>
                 </div>
+                <div class="settings-section settings-section-about">
+                    <button class="settings-about-btn" @onclick="OpenAbout">
+                        <Icon Name="info" Size="13" /> Über die App
+                    </button>
+                </div>
             </div>
         </div>
     </header>
@@ -716,6 +721,51 @@
                         }
                     </div>
                     <button class="btn btn-secondary" @onclick="() => showAddBlockDialog = false">Abbrechen</button>
+                </div>
+            </div>
+        }
+
+        @if (_showAbout)
+        {
+            <div class="modal-overlay" @onclick="CloseAbout">
+                <div class="modal-dialog modal-about" @onclick:stopPropagation>
+                    <div class="about-header">
+                        <span class="about-logo">📦</span>
+                        <div>
+                            <h3>relexx' Template Generator</h3>
+                            <span class="about-version">Blazor WebAssembly · .NET 8</span>
+                        </div>
+                    </div>
+                    <p class="about-welcome">Mit diesem Tool erstellst du professionelle eBay-Angebotsbeschreibungen als fertigen HTML-Code — direkt im Browser, ohne Installation.</p>
+                    <div class="about-features">
+                        <div class="about-feature">
+                            <span class="about-feature-num">1</span>
+                            <div><strong>Layout</strong> — Definiere die Struktur deines Angebots: füge Blöcke (Überschriften, Texte, Bilder, Feature-Listen u. v. m.) hinzu und ordne sie per Drag & Drop.</div>
+                        </div>
+                        <div class="about-feature">
+                            <span class="about-feature-num">2</span>
+                            <div><strong>Eingabe</strong> — Fülle jeden Block mit Inhalten: Texte, Bilder und blockspezifische Einstellungen werden direkt bearbeitet.</div>
+                        </div>
+                        <div class="about-feature">
+                            <span class="about-feature-num">3</span>
+                            <div><strong>Vorschau</strong> — Sieh dir die Live-Vorschau des generierten Listings an, bevor du exportierst.</div>
+                        </div>
+                        <div class="about-feature">
+                            <span class="about-feature-num">4</span>
+                            <div><strong>HTML</strong> — Kopiere oder lade den fertigen HTML-Code herunter und füge ihn direkt in dein eBay-Angebot ein.</div>
+                        </div>
+                    </div>
+                    <div class="about-deps">
+                        <span class="about-deps-label">Verwendete Bibliotheken</span>
+                        <div class="about-dep"><strong>Blazor WebAssembly</strong> 8.0.27 — .NET-App-Framework im Browser</div>
+                        <div class="about-dep"><strong>Markdig</strong> 1.2.0 — Markdown-zu-HTML-Konvertierung</div>
+                        <div class="about-dep"><strong>SortableJS</strong> 1.15.0 — Drag & Drop für Blöcke</div>
+                        <div class="about-dep"><strong>Lucide</strong> — UI-Icons (App &amp; generiertes HTML)</div>
+                        <div class="about-dep"><strong>Geist / Geist Mono</strong> (Google Fonts) — UI-Schriftarten</div>
+                    </div>
+                    <div class="modal-actions modal-actions-row">
+                        <button class="btn btn-primary" @onclick="CloseAbout">Los geht's!</button>
+                    </div>
                 </div>
             </div>
         }

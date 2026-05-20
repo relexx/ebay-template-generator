@@ -11,6 +11,7 @@ public static class Constants
         public const string LayoutsKey = "relexx-layouts";
         public const string ArticleKey = "relexx-article";
         public const string SettingsKey = "relexx-settings";
+        public const string FirstRunKey  = "relexx-first-run";
     }
     
     /// <summary>Dateigrößen-Limits</summary>
