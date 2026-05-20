@@ -529,6 +529,19 @@ public partial class Index
         await LocalStorage.SetItemAsync(Constants.Storage.ArticleKey, article);
     }
 
+    private async Task StartNewArticle()
+    {
+        article = new() { Layout = currentLayout };
+        PrefillFixedTextBlocks();
+        _maxReached = 0;
+        await GoToPhase(0);
+    }
+
+    private void InvalidatePreview()
+    {
+        if (_maxReached > 1) _maxReached = 1;
+    }
+
     private void LoadDemo()
     {
         article = new ArticleData
@@ -547,16 +560,21 @@ public partial class Index
                 : block.Type.GetDemoContent();
             article.SetBlockContent(block.Id, content);
         }
+        InvalidatePreview();
     }
 
     private void ResetArticle()
     {
         article = new() { Layout = currentLayout };
         PrefillFixedTextBlocks();
+        InvalidatePreview();
     }
 
     private void SetContent(string blockId, ChangeEventArgs e)
-        => article.SetBlockContent(blockId, e.Value?.ToString() ?? string.Empty);
+    {
+        article.SetBlockContent(blockId, e.Value?.ToString() ?? string.Empty);
+        InvalidatePreview();
+    }
 
     private void ClearBlock(string blockId)
     {
@@ -565,6 +583,7 @@ public partial class Index
             article.SetBlockContent(blockId, block.Options.FixedContent);
         else
             article.ClearBlockContent(blockId);
+        InvalidatePreview();
     }
 
     private void PrefillFixedTextBlocks()
@@ -582,7 +601,10 @@ public partial class Index
         {
             var dataUrl = await JS.InvokeAsync<string?>("readDroppedImage");
             if (!string.IsNullOrEmpty(dataUrl))
+            {
                 article.SetBlockContent(blockId, dataUrl);
+                InvalidatePreview();
+            }
         }
         catch { }
     }
@@ -601,6 +623,7 @@ public partial class Index
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
             article.SetBlockContent(blockId, $"data:{file.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}");
+            InvalidatePreview();
             StateHasChanged();
         }
         catch (Exception ex)
@@ -633,6 +656,7 @@ public partial class Index
                 article = importedArticle;
                 article.Layout = currentLayout;
                 PrefillFixedTextBlocks();
+                InvalidatePreview();
                 await ShowNotification("✓ Artikel importiert!", true);
             }
             else

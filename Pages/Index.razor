@@ -412,8 +412,8 @@
                             <Icon Name="upload" Size="14" /> Import
                         </button>
                         <InputFile id="article-import" OnChange="ImportArticle" accept=".json" style="display:none" />
-                        <button class="btn btn-danger btn-small" @onclick="ResetArticle" title="Zurücksetzen">
-                            <Icon Name="refresh" Size="14" />
+                        <button class="btn btn-secondary btn-danger" @onclick="ResetArticle" title="Zurücksetzen">
+                            <Icon Name="refresh" Size="14" /> Zurücksetzen
                         </button>
                     </div>
                 </div>
@@ -422,16 +422,16 @@
             <div class="content-grid">
                 <Panel Title="Header" Icon="type">
                     <Field Label="Titel">
-                        <input type="text" @bind="article.Title" placeholder="Produktname" />
+                        <input type="text" @bind="article.Title" @bind:after="InvalidatePreview" placeholder="Produktname" />
                     </Field>
                     <Field Label="Untertitel" Hint="Kurzbeschreibung · Artikelnummer">
-                        <input type="text" @bind="article.Subtitle" placeholder="Kurzbeschreibung │ Artikelnummer" />
+                        <input type="text" @bind="article.Subtitle" @bind:after="InvalidatePreview" placeholder="Kurzbeschreibung │ Artikelnummer" />
                     </Field>
                 </Panel>
 
                 <Panel Title="Mobile Summary" Icon="smartphone">
                     <Field Label="Zusammenfassung" Hint="@($"max. {Constants.Limits.MaxMobileSummaryLength} Zeichen")">
-                        <textarea @bind="article.MobileSummary" rows="3"
+                        <textarea @bind="article.MobileSummary" @bind:after="InvalidatePreview" rows="3"
                                   placeholder="Kurze Produktbeschreibung für Mobile..."></textarea>
                         <span class="char-count @(article.MobileSummary?.Length > Constants.Limits.MaxMobileSummaryLength ? "over-limit" : "")">
                             @(article.MobileSummary?.Length ?? 0) / @Constants.Limits.MaxMobileSummaryLength
@@ -490,13 +490,13 @@
 
                 <Panel Title="Fußzeile" Icon="layoutPanel">
                     <Actions>
-                        <button class="btn-clear" @onclick="() => article.Footer = string.Empty" title="Inhalt löschen">
+                        <button class="btn-clear" @onclick="() => { article.Footer = string.Empty; InvalidatePreview(); }" title="Inhalt löschen">
                             <Icon Name="trash" Size="13" />
                         </button>
                     </Actions>
                     <ChildContent>
                         <Field Label="Einträge" Hint="@($"max. {Constants.Limits.MaxFooterLines} Zeilen · Format: Label: Wert")">
-                            <textarea @bind="article.Footer" rows="4"
+                            <textarea @bind="article.Footer" @bind:after="InvalidatePreview" rows="4"
                                       placeholder="SKU: ABC123&#10;Farbe: Schwarz&#10;Garantie: 2 Jahre"></textarea>
                             <span class="char-count @(GetFooterLines() > Constants.Limits.MaxFooterLines ? "over-limit" : "")">
                                 @GetFooterLines() / @Constants.Limits.MaxFooterLines Zeilen
@@ -588,7 +588,7 @@
                 <button class="btn btn-secondary btn-large" @onclick="() => GoToPhase(2)">
                     <Icon Name="arrowLeft" Size="16" /> Vorschau
                 </button>
-                <button class="btn btn-secondary btn-large" @onclick="() => GoToPhase(1)">
+                <button class="btn btn-secondary btn-large" @onclick="StartNewArticle">
                     <Icon Name="refresh" Size="16" /> Neuer Artikel
                 </button>
             </div>
