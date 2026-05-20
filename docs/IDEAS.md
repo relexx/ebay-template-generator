@@ -6,17 +6,17 @@ Gesammelte Ideen aus Brainstorming-Sessions. Keine Priorisierung, kein Versprech
 
 ## Animationen
 
-- **Phasenwechsel** — Slide-left/right zwischen den Phasen (CSS `translate` + `opacity`, je nach Navigationsrichtung)
+- ✅ **Phasenwechsel** — Slide-left/right zwischen den Phasen (CSS `translate` + `opacity`, je nach Navigationsrichtung)
 - ✅ **Block hinzufügen/entfernen** — `slide-down` + `fade-in` beim Einfügen, `slide-up` + `fade-out` beim Löschen
 - ✅ **Modal öffnen** — `scale(0.95) → scale(1)` + `opacity` statt sofortigem Erscheinen
 - ✅ **Notification** — Slide-in von unten rechts, automatisches Slide-out nach Timeout
-- **Step-Connector** — Breite animiert von 0 → 100 % beim Abschließen einer Phase
-- **Drag & Drop** — Drop-Zone pulsiert beim Hovern über gültiger Zielposition
-- **Farbwähler-Swatch** — Kurzer `pop`-Effekt beim Aktivieren
-- **Preview-Iframe** — Fade-in nach dem Laden statt harter Erscheinung
-- **Toolbar-Meta Counter** — `count-up`-Animation beim Ändern der Blockanzahl
-- **Wortmarke-Animation** — Alle 10-20 Sekunden wird "relexx_tmpl" wie in einer Konsole neu geschrieben
-- **Animationen ausschalten** — Toggle in den Einstellungen, um Animationen zu aktivieren/deaktivieren. Standard ist AN.
+- ✅ **Step-Connector** — Breite animiert von 0 → 100 % beim Abschließen einer Phase
+- ✅ **Drag & Drop** — Drop-Zone pulsiert beim Hovern über gültiger Zielposition
+- ✅ **Farbwähler-Swatch** — Kurzer `pop`-Effekt beim Aktivieren
+- ✅ **Preview-Iframe** — Fade-in nach dem Laden statt harter Erscheinung
+- ✅ **Toolbar-Meta Counter** — `count-up`-Animation beim Ändern der Blockanzahl
+- ✅ **Wortmarke-Animation** — Alle 10-20 Sekunden wird "relexx_tmpl" wie in einer Konsole neu geschrieben
+- ✅ **Animationen ausschalten** — Toggle in den Einstellungen, um Animationen zu aktivieren/deaktivieren. Standard ist AN.
 
 ---
 
