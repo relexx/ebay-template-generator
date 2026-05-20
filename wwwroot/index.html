@@ -43,6 +43,11 @@
 
     <script src="_framework/blazor.webassembly.js"></script>
     <script>
+        // Trigger file input programmatically (works even with display:none)
+        window.triggerClick = function(id) {
+            document.getElementById(id)?.click();
+        };
+
         // Download file helper
         window.downloadFile = function(filename, contentType, content) {
             const blob = new Blob([content], { type: contentType });

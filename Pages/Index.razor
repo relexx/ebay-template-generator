@@ -138,11 +138,11 @@
     }
 
     // ═══════════════ LAYOUT MANAGEMENT ═══════════════
-    private Task LoadLayouts()
+    private async Task LoadLayouts()
     {
         try
         {
-            var saved = LocalStorage.GetItem<List<LayoutTemplate>>(Constants.Storage.LayoutsKey);
+            var saved = await LocalStorage.GetItemAsync<List<LayoutTemplate>>(Constants.Storage.LayoutsKey);
             layouts = saved ?? new();
 
             if (!layouts.Exists(l => l.IsDefault))
@@ -158,14 +158,12 @@
             layouts = new() { LayoutTemplate.CreateStandard() };
             currentLayout = layouts[0];
         }
-        return Task.CompletedTask;
     }
 
-    private Task SaveLayouts()
+    private async Task SaveLayouts()
     {
         currentLayout.ModifiedAt = DateTime.UtcNow;
-        LocalStorage.SetItem(Constants.Storage.LayoutsKey, layouts);
-        return Task.CompletedTask;
+        await LocalStorage.SetItemAsync(Constants.Storage.LayoutsKey, layouts);
     }
 
     private async Task OnLayoutSelected()
@@ -314,11 +312,11 @@
     }
 
     // ═══════════════ ARTICLE MANAGEMENT ═══════════════
-    private Task LoadArticle()
+    private async Task LoadArticle()
     {
         try
         {
-            var saved = LocalStorage.GetItem<ArticleData>(Constants.Storage.ArticleKey);
+            var saved = await LocalStorage.GetItemAsync<ArticleData>(Constants.Storage.ArticleKey);
             if (saved is not null)
             {
                 article = saved;
@@ -338,15 +336,13 @@
             article = new() { Layout = currentLayout };
         }
         PrefillFixedTextBlocks();
-        return Task.CompletedTask;
     }
 
-    private Task SaveArticle()
+    private async Task SaveArticle()
     {
         article.Layout = currentLayout;
         article.ModifiedAt = DateTime.UtcNow;
-        LocalStorage.SetItem(Constants.Storage.ArticleKey, article);
-        return Task.CompletedTask;
+        await LocalStorage.SetItemAsync(Constants.Storage.ArticleKey, article);
     }
 
     private void LoadDemo()
@@ -579,6 +575,9 @@
         _ => 4
     };
 
+    private async Task TriggerImagePicker(string blockId)
+        => await JS.InvokeVoidAsync("triggerClick", $"img-{blockId}");
+
     private async Task ShowNotification(string msg, bool success)
     {
         notificationCts?.Cancel();
@@ -620,10 +619,11 @@
                 <button class="btn btn-secondary" @onclick="ExportLayout" title="Layout exportieren">
                     <span class="icon">📤</span> Export
                 </button>
-                <label class="btn btn-secondary" title="Layout importieren">
+                <InputFile id="layout-import" OnChange="ImportLayout" accept=".json" style="display:none" />
+                <button class="btn btn-secondary" title="Layout importieren"
+                        @onclick='() => JS.InvokeVoidAsync("triggerClick", "layout-import")'>
                     <span class="icon">📥</span> Import
-                    <InputFile OnChange="ImportLayout" accept=".json" style="display: none;" />
-                </label>
+                </button>
                 <button class="btn btn-danger" @onclick="DeleteLayout" 
                         disabled="@(currentLayout.IsDefault || layouts.Count <= 1)" 
                         title="Layout löschen">
@@ -841,10 +841,11 @@
                 <button class="btn btn-secondary" @onclick="ExportArticle">
                     <span class="icon">📤</span> Export
                 </button>
-                <label class="btn btn-secondary">
+                <InputFile id="article-import" OnChange="ImportArticle" accept=".json" style="display:none" />
+                <button class="btn btn-secondary"
+                        @onclick='() => JS.InvokeVoidAsync("triggerClick", "article-import")'>
                     <span class="icon">📥</span> Import
-                    <InputFile OnChange="ImportArticle" accept=".json" style="display: none;" />
-                </label>
+                </button>
             </div>
 
             <div class="form-grid">
@@ -886,10 +887,11 @@
                                 <div class="input-with-button">
                                     <input type="text" value="@article.GetBlockContent(block.Id)" 
                                            @onchange="e => SetContent(block.Id, e)" placeholder="https://..." />
-                                    <label class="btn btn-accent">
+                                    <InputFile id="@($"img-{block.Id}")" OnChange="e => UploadImage(e, block.Id)" accept="image/*" style="display:none" />
+                                    <button class="btn btn-accent"
+                                            @onclick="() => TriggerImagePicker(block.Id)">
                                         <span class="icon">📷</span>
-                                        <InputFile OnChange="e => UploadImage(e, block.Id)" accept="image/*" style="display: none;" />
-                                    </label>
+                                    </button>
                                 </div>
                                 @if (!string.IsNullOrEmpty(article.GetBlockContent(block.Id)))
                                 {
