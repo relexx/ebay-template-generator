@@ -42,7 +42,7 @@ public static class Constants
     [
         new("Versand & Logistik",  ["truck", "package2", "box", "mapPin", "clock", "calendar"]),
         new("Qualität & Service",  ["shield", "award", "star", "zap", "checkCircle", "sparkles"]),
-        new("Technik & Produkt",   ["cpu", "wifi", "battery", "camera", "monitor", "headphones", "printer", "wrench", "screwdriver", "scissors", "hammer", "ruler", "weight"]),
+        new("Technik & Produkt",   ["cpu", "wifi", "battery", "camera", "monitor", "headphones", "printer", "wrench", "toolbox", "scissors", "hammer", "ruler", "weight"]),
         new("Kommunikation",       ["globe", "phone", "mail", "link"]),
         new("Allgemein",           ["image", "fileText", "lightbulb", "target", "barChart", "search", "palette", "pin", "settings"]),
         new("UI & Status",         ["tags", "grid", "list", "alertTriangle", "info", "eye", "eyeOff", "xCircle"]),
