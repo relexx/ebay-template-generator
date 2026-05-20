@@ -468,6 +468,17 @@ public partial class Index
         }
     }
 
+    private async Task HandleImageDrop(Microsoft.AspNetCore.Components.Web.DragEventArgs _, string blockId)
+    {
+        try
+        {
+            var dataUrl = await JS.InvokeAsync<string?>("readDroppedImage");
+            if (!string.IsNullOrEmpty(dataUrl))
+                article.SetBlockContent(blockId, dataUrl);
+        }
+        catch { }
+    }
+
     private async Task UploadImage(InputFileChangeEventArgs e, string blockId)
     {
         try

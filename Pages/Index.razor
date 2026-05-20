@@ -419,82 +419,91 @@
                 </div>
             </div>
 
-            <div class="form-grid">
-                <div class="form-section">
-                    <h2>📌 Header</h2>
-                    <div class="form-group">
-                        <label>Titel</label>
+            <div class="content-grid">
+                <Panel Title="Header" Icon="type">
+                    <Field Label="Titel">
                         <input type="text" @bind="article.Title" placeholder="Produktname" />
-                    </div>
-                    <div class="form-group">
-                        <label>Untertitel</label>
+                    </Field>
+                    <Field Label="Untertitel" Hint="Kurzbeschreibung · Artikelnummer">
                         <input type="text" @bind="article.Subtitle" placeholder="Kurzbeschreibung │ Artikelnummer" />
-                    </div>
-                </div>
+                    </Field>
+                </Panel>
 
-                <div class="form-section">
-                    <h2>📱 Mobile Summary</h2>
-                    <div class="form-group">
-                        <label>Zusammenfassung (max. @Constants.Limits.MaxMobileSummaryLength Zeichen)</label>
+                <Panel Title="Mobile Summary" Icon="smartphone">
+                    <Field Label="Zusammenfassung" Hint="@($"max. {Constants.Limits.MaxMobileSummaryLength} Zeichen")">
                         <textarea @bind="article.MobileSummary" rows="3"
                                   placeholder="Kurze Produktbeschreibung für Mobile..."></textarea>
                         <span class="char-count @(article.MobileSummary?.Length > Constants.Limits.MaxMobileSummaryLength ? "over-limit" : "")">
                             @(article.MobileSummary?.Length ?? 0) / @Constants.Limits.MaxMobileSummaryLength
                         </span>
-                    </div>
-                </div>
+                    </Field>
+                </Panel>
 
                 @foreach (var block in currentLayout.Blocks.OrderBy(b => b.Order))
                 {
-                    <div class="form-section">
-                        <div class="section-header">
-                            <h2>@block.Icon @block.Title</h2>
-                            <button class="btn-clear" @onclick="() => ClearBlock(block.Id)" title="Inhalt löschen">🗑️</button>
-                        </div>
-                        <div class="form-group">
-                            <label>@block.Type.GetInputLabel()</label>
-                            @if (block.Type == BlockType.Image)
-                            {
-                                <div class="input-with-button">
-                                    <input type="text" value="@article.GetBlockContent(block.Id)"
-                                           @onchange="e => SetContent(block.Id, e)" placeholder="https://..." />
-                                    <InputFile id="@($"img-{block.Id}")" OnChange="e => UploadImage(e, block.Id)" accept="image/*" style="display:none" />
-                                    <button class="btn btn-accent" @onclick="() => TriggerImagePicker(block.Id)">
-                                        <span class="icon">📷</span>
-                                    </button>
-                                </div>
-                                @if (!string.IsNullOrEmpty(article.GetBlockContent(block.Id)))
+                    var blockRef = block;
+                    <Panel Title="@blockRef.Title" Icon="@(IconHelper.Has(blockRef.Icon) ? blockRef.Icon : "blocks")">
+                        <Actions>
+                            <button class="btn-clear" @onclick="() => ClearBlock(blockRef.Id)" title="Inhalt löschen">
+                                <Icon Name="trash" Size="13" />
+                            </button>
+                        </Actions>
+                        <ChildContent>
+                            <Field Label="@blockRef.Type.GetInputLabel()" Hint="@blockRef.Type.GetInputHint()">
+                                @if (blockRef.Type == BlockType.Image)
                                 {
-                                    <div class="image-preview">
-                                        <img src="@article.GetBlockContent(block.Id)" alt="Vorschau" />
+                                    <div class="dropzone @(string.IsNullOrEmpty(article.GetBlockContent(blockRef.Id)) ? "" : "has-image")"
+                                         @ondragover:preventDefault @ondragover="() => {}"
+                                         @ondrop:preventDefault @ondrop="async e => await HandleImageDrop(e, blockRef.Id)">
+                                        @if (!string.IsNullOrEmpty(article.GetBlockContent(blockRef.Id)))
+                                        {
+                                            <img src="@article.GetBlockContent(blockRef.Id)" class="dropzone-preview" alt="Vorschau" />
+                                        }
+                                        else
+                                        {
+                                            <div class="dropzone-hint">
+                                                <Icon Name="image" Size="24" />
+                                                <span>Bild hier ablegen</span>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="input-with-button" style="margin-top:8px">
+                                        <input type="text" class="mono" value="@article.GetBlockContent(blockRef.Id)"
+                                               @onchange="e => SetContent(blockRef.Id, e)" placeholder="https://..." />
+                                        <InputFile id="@($"img-{blockRef.Id}")" OnChange="e => UploadImage(e, blockRef.Id)" accept="image/*" style="display:none" />
+                                        <button class="btn btn-accent" @onclick="() => TriggerImagePicker(blockRef.Id)" title="Bild hochladen">
+                                            <Icon Name="camera" Size="14" />
+                                        </button>
                                     </div>
                                 }
-                            }
-                            else
-                            {
-                                <textarea value="@article.GetBlockContent(block.Id)"
-                                          @onchange="e => SetContent(block.Id, e)"
-                                          rows="@GetTextareaRows(block.Type)"
-                                          placeholder="@block.Type.GetInputPlaceholder()"></textarea>
-                            }
-                        </div>
-                    </div>
+                                else
+                                {
+                                    <textarea value="@article.GetBlockContent(blockRef.Id)"
+                                              @onchange="e => SetContent(blockRef.Id, e)"
+                                              rows="@GetTextareaRows(blockRef.Type)"
+                                              placeholder="@blockRef.Type.GetInputPlaceholder()"></textarea>
+                                }
+                            </Field>
+                        </ChildContent>
+                    </Panel>
                 }
 
-                <div class="form-section">
-                    <div class="section-header">
-                        <h2>🏷️ Fußzeile</h2>
-                        <button class="btn-clear" @onclick="() => article.Footer = string.Empty" title="Inhalt löschen">🗑️</button>
-                    </div>
-                    <div class="form-group">
-                        <label>Pro Zeile ein Eintrag, max. @Constants.Limits.MaxFooterLines Zeilen (Format: Label: Wert)</label>
-                        <textarea @bind="article.Footer" rows="4"
-                                  placeholder="SKU: ABC123&#10;Farbe: Schwarz&#10;Garantie: 2 Jahre"></textarea>
-                        <span class="char-count @(GetFooterLines() > Constants.Limits.MaxFooterLines ? "over-limit" : "")">
-                            @GetFooterLines() / @Constants.Limits.MaxFooterLines Zeilen
-                        </span>
-                    </div>
-                </div>
+                <Panel Title="Fußzeile" Icon="layoutPanel">
+                    <Actions>
+                        <button class="btn-clear" @onclick="() => article.Footer = string.Empty" title="Inhalt löschen">
+                            <Icon Name="trash" Size="13" />
+                        </button>
+                    </Actions>
+                    <ChildContent>
+                        <Field Label="Einträge" Hint="@($"max. {Constants.Limits.MaxFooterLines} Zeilen · Format: Label: Wert")">
+                            <textarea @bind="article.Footer" rows="4"
+                                      placeholder="SKU: ABC123&#10;Farbe: Schwarz&#10;Garantie: 2 Jahre"></textarea>
+                            <span class="char-count @(GetFooterLines() > Constants.Limits.MaxFooterLines ? "over-limit" : "")">
+                                @GetFooterLines() / @Constants.Limits.MaxFooterLines Zeilen
+                            </span>
+                        </Field>
+                    </ChildContent>
+                </Panel>
             </div>
 
             <div class="stage-foot">

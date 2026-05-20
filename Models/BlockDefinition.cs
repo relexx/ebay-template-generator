@@ -176,6 +176,15 @@ public static class BlockTypeExtensions
         _ => ""
     };
     
+    public static string? GetInputHint(this BlockType type) => type switch
+    {
+        BlockType.RichText     => "**fett** · *kursiv* · [Link](url)",
+        BlockType.KeyValueGrid => "Titel | Beschreibung",
+        BlockType.DataTable    => "Eigenschaft | Wert",
+        BlockType.FeatureCards => "Kategorie | Option 1, Option 2",
+        _ => null
+    };
+
     public static string GetInputLabel(this BlockType type) => type switch
     {
         BlockType.Image => "Bild-URL oder Base64",

@@ -110,6 +110,22 @@
             });
         };
 
+        // Image drop: reads the first dropped image file and returns a data URL
+        let _droppedFile = null;
+        document.addEventListener('drop', function(e) {
+            const file = e.dataTransfer?.files?.[0];
+            _droppedFile = (file && file.type.startsWith('image/')) ? file : null;
+        }, true);
+        window.readDroppedImage = function() {
+            if (!_droppedFile) return Promise.resolve(null);
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => { _droppedFile = null; resolve(e.target.result); };
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(_droppedFile);
+            });
+        };
+
         // iframe preview — set srcdoc without URL-encoding issues
         window.setIframeSrcDoc = function(iframe, html) {
             if (iframe) iframe.srcdoc = html;
