@@ -398,13 +398,49 @@ public class TemplateGeneratorService
             int r = Convert.ToInt32(hex[..2], 16);
             int g = Convert.ToInt32(hex[2..4], 16);
             int b = Convert.ToInt32(hex[4..6], 16);
-            
+
             r = Math.Min(255, (int)(r + (255 - r) * factor));
             g = Math.Min(255, (int)(g + (255 - g) * factor));
             b = Math.Min(255, (int)(b + (255 - b) * factor));
-            
+
             return $"#{r:X2}{g:X2}{b:X2}";
         }
         catch { return hex; }
+    }
+
+    public string GenerateJsonSchema(LayoutTemplate layout)
+    {
+        var blockSchemas = layout.Blocks
+            .Where(b => b.Type != BlockType.FixedText)
+            .OrderBy(b => b.Order)
+            .Select(b =>
+            {
+                var placeholder = b.Type.GetInputPlaceholder().Replace("\n", "\\n").Replace("\"", "\\\"");
+                var formatHint = b.Type.GetInputLabel();
+                return $@"    ""{b.Id}"": ""[{b.Title}] {formatHint}: {placeholder}""";
+            });
+
+        return $$"""
+            {
+              "_schema": "Artikeldaten für relexx' Template Generator",
+              "_layoutId": "{{layout.Id}}",
+              "_layoutName": "{{layout.Name}}",
+              "_hint": "Dieses JSON kann direkt in den Template Generator importiert werden. Ersetze alle Werte mit den echten Produktdaten. Behalte das Format (z.B. 'Key | Value' für Tabellen, eine Zeile pro Eintrag). Entferne die [Blocktitel]-Hinweise beim Ausfüllen - sie dienen nur zur Orientierung. Biete das Ergebnis als Datei zum Herunterladen an, mit dem Dateinamen [Produkt-Namen-mit-Bindestrichen]_[YYYY-mm-DD].json .",
+
+              "Title": "Produktname (Hauptüberschrift)",
+              "Subtitle": "Kurzbeschreibung | Artikelnummer",
+              "MobileSummary": "Max. {{Constants.Limits.MaxMobileSummaryLength}} Zeichen für mobile Vorschau und Google Shopping",
+              "Footer": "SKU: ABC123\nFarbe: Schwarz\nHerstellergarantie: 2 Jahre (max. {{Constants.Limits.MaxFooterLines}} Zeilen)",
+
+              "Layout": {
+                "Id": "{{layout.Id}}",
+                "Name": "{{layout.Name}}"
+              },
+
+              "BlockContents": {
+            {{string.Join(",\n", blockSchemas)}}
+              }
+            }
+            """;
     }
 }
