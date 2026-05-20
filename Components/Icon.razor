@@ -1,0 +1,10 @@
+@using EbayTemplateGenerator
+
+@((MarkupString)IconHelper.Svg(Name, Size, Color, StrokeWidth))
+
+@code {
+    [Parameter, EditorRequired] public string Name { get; set; } = string.Empty;
+    [Parameter] public int Size { get; set; } = 16;
+    [Parameter] public string? Color { get; set; }
+    [Parameter] public double StrokeWidth { get; set; } = 1.75;
+}

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-theme="dark" data-density="comfortable">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link href="css/app.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -101,6 +101,26 @@
             });
         };
         
+        // Settings helpers — write data-* attributes and CSS vars on <html>
+        window.setTheme = function(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+        };
+        window.setDensity = function(density) {
+            document.documentElement.setAttribute('data-density', density);
+        };
+        window.setAccent = function(l, c, h) {
+            const el = document.documentElement;
+            el.style.setProperty('--accent-l', l);
+            el.style.setProperty('--accent-c', c);
+            el.style.setProperty('--accent-h', h);
+        };
+        window.getTheme = function() {
+            return document.documentElement.getAttribute('data-theme') || 'dark';
+        };
+        window.getDensity = function() {
+            return document.documentElement.getAttribute('data-density') || 'comfortable';
+        };
+
         window.destroySortable = function(elementId) {
             const el = document.getElementById(elementId);
             if (el && el._sortable) {
