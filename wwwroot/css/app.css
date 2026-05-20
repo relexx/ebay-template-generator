@@ -1208,7 +1208,31 @@ input[type="color"] {
 }
 
 /* Icon & Bullet Pickers */
-.icon-picker, .bullet-picker {
+.bullet-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.icon-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.icon-picker-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+}
+
+.icon-picker-tiles {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;

@@ -232,12 +232,20 @@
 
                             <Field Label="Icon">
                                 <div class="icon-picker">
-                                    @foreach (var iconName in Constants.AvailableIcons)
+                                    @foreach (var cat in Constants.IconCategories)
                                     {
-                                        <button type="button" class="icon-tile @(SelectedBlock.Icon == iconName ? "is-active" : "")"
-                                                @onclick="() => SetBlockIcon(iconName)" title="@iconName">
-                                            <Icon Name="@iconName" Size="18" StrokeWidth="1.6" />
-                                        </button>
+                                        <div class="icon-picker-group">
+                                            <div class="icon-picker-label">@cat.Label</div>
+                                            <div class="icon-picker-tiles">
+                                                @foreach (var iconName in cat.Icons)
+                                                {
+                                                    <button type="button" class="icon-tile @(SelectedBlock.Icon == iconName ? "is-active" : "")"
+                                                            @onclick="() => SetBlockIcon(iconName)" title="@iconName">
+                                                        <Icon Name="@iconName" Size="18" StrokeWidth="1.6" />
+                                                    </button>
+                                                }
+                                            </div>
+                                        </div>
                                     }
                                 </div>
                             </Field>

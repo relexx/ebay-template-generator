@@ -35,13 +35,21 @@ public static class Constants
         public const int IdLength = 8;
     }
     
-    /// <summary>Icon names for block icon picker (Lucide icon set)</summary>
-    public static readonly string[] AvailableIcons =
-    {
-        "image", "fileText", "sparkles", "settings", "wrench",
-        "box", "lightbulb", "star", "target", "barChart",
-        "search", "zap", "hammer", "ruler", "palette", "pin",
-    };
+    public record IconCategory(string Label, string[] Icons);
+
+    /// <summary>Icon categories for the block icon picker (Lucide icon set)</summary>
+    public static readonly IconCategory[] IconCategories =
+    [
+        new("Versand & Logistik",  ["truck", "package2", "box", "mapPin", "clock", "calendar"]),
+        new("Qualität & Service",  ["shield", "award", "star", "zap", "checkCircle", "sparkles"]),
+        new("Technik & Produkt",   ["cpu", "wifi", "battery", "camera", "monitor", "headphones", "printer", "wrench", "screwdriver", "scissors", "hammer", "ruler", "weight"]),
+        new("Kommunikation",       ["globe", "phone", "mail", "link"]),
+        new("Allgemein",           ["image", "fileText", "lightbulb", "target", "barChart", "search", "palette", "pin", "settings"]),
+        new("UI & Status",         ["tags", "grid", "list", "alertTriangle", "info", "eye", "eyeOff", "xCircle"]),
+    ];
+
+    /// <summary>Flat list of all available icon names (derived from IconCategories)</summary>
+    public static IEnumerable<string> AvailableIcons => IconCategories.SelectMany(c => c.Icons);
     
     /// <summary>Verfügbare Aufzählungszeichen</summary>
     public static readonly string[] AvailableBullets = 
