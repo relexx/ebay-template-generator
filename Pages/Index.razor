@@ -128,6 +128,9 @@
                     </div>
                 </div>
                 <div class="settings-section settings-section-about">
+                    <button class="settings-about-btn settings-about-btn--danger" @onclick="AskClearAllData">
+                        <Icon Name="trash" Size="13" /> Alle lokalen Daten entfernen
+                    </button>
                     <button class="settings-about-btn" @onclick="OpenAbout">
                         <Icon Name="info" Size="13" /> Über die App
                     </button>
@@ -179,7 +182,8 @@
                                     @onclick='() => JS.InvokeVoidAsync("triggerClick", "layout-import")'>
                                 <Icon Name="upload" Size="14" /> Import
                             </button>
-                            <button class="btn btn-danger btn-secondary page-actions-secondary" @onclick="DeleteLayout"
+                            <button class="btn btn-danger btn-secondary page-actions-secondary"
+                                    @onclick='() => AskConfirm("Layout löschen", $"Layout «{currentLayout.Name}» wird dauerhaft gelöscht. Alle enthaltenen Blöcke gehen verloren.", DeleteLayout)'
                                     disabled="@(currentLayout.IsDefault || layouts.Count <= 1)"
                                     title="Layout löschen">
                                 <Icon Name="trash" Size="14" /> Löschen
@@ -198,7 +202,8 @@
                             <button class="btn btn-secondary" @onclick='async () => { _showActionsOverflow = false; await JS.InvokeVoidAsync("triggerClick", "layout-import"); }'>
                                 <Icon Name="upload" Size="14" /> Import
                             </button>
-                            <button class="btn btn-danger btn-secondary" @onclick="async () => { _showActionsOverflow = false; await DeleteLayout(); }"
+                            <button class="btn btn-danger btn-secondary"
+                                    @onclick='() => { _showActionsOverflow = false; AskConfirm("Layout löschen", $"Layout «{currentLayout.Name}» wird dauerhaft gelöscht. Alle enthaltenen Blöcke gehen verloren.", DeleteLayout); }'
                                     disabled="@(currentLayout.IsDefault || layouts.Count <= 1)">
                                 <Icon Name="trash" Size="14" /> Löschen
                             </button>
@@ -257,7 +262,9 @@
                         <Actions>
                             @if (SelectedBlock is not null)
                             {
-                                <button class="btn btn-danger btn-small" @onclick="DeleteBlock" title="Block löschen">
+                                <button class="btn btn-danger btn-small"
+                                        @onclick='() => AskConfirm("Block löschen", $"Block «{SelectedBlock!.Title}» wird dauerhaft aus dem Layout entfernt.", DeleteBlock)'
+                                        title="Block löschen">
                                     <Icon Name="trash" Size="14" />
                                 </button>
                             }
@@ -474,7 +481,9 @@
                                     @onclick='() => JS.InvokeVoidAsync("triggerClick", "article-import")'>
                                 <Icon Name="upload" Size="14" /> Import
                             </button>
-                            <button class="btn btn-secondary btn-danger page-actions-secondary" @onclick="ResetArticle" title="Zurücksetzen">
+                            <button class="btn btn-secondary btn-danger page-actions-secondary"
+                                    @onclick='() => AskConfirm("Eingaben zurücksetzen", "Alle eingegebenen Inhalte werden auf den Standardzustand zurückgesetzt.", async () => { ResetArticle(); }, "Zurücksetzen")'
+                                    title="Zurücksetzen">
                                 <Icon Name="refresh" Size="14" /> Zurücksetzen
                             </button>
                             <button class="btn btn-secondary page-actions-more-btn"
@@ -488,7 +497,8 @@
                             <button class="btn btn-secondary" @onclick='async () => { _showActionsOverflow = false; await JS.InvokeVoidAsync("triggerClick", "article-import"); }'>
                                 <Icon Name="upload" Size="14" /> Import
                             </button>
-                            <button class="btn btn-danger btn-secondary" @onclick="() => { _showActionsOverflow = false; ResetArticle(); }">
+                            <button class="btn btn-danger btn-secondary"
+                                    @onclick='() => { _showActionsOverflow = false; AskConfirm("Eingaben zurücksetzen", "Alle eingegebenen Inhalte werden auf den Standardzustand zurückgesetzt.", async () => { ResetArticle(); }, "Zurücksetzen"); }'>
                                 <Icon Name="refresh" Size="14" /> Zurücksetzen
                             </button>
                         </div>
@@ -721,6 +731,20 @@
                         }
                     </div>
                     <button class="btn btn-secondary" @onclick="() => showAddBlockDialog = false">Abbrechen</button>
+                </div>
+            </div>
+        }
+
+        @if (_pendingConfirmAction is not null)
+        {
+            <div class="modal-overlay" @onclick="CancelConfirm">
+                <div class="modal-dialog modal-confirm" @onclick:stopPropagation>
+                    <h3>@_confirmTitle</h3>
+                    <p>@_confirmMessage</p>
+                    <div class="modal-actions modal-actions-row">
+                        <button class="btn btn-secondary" @onclick="CancelConfirm">Abbrechen</button>
+                        <button class="btn btn-danger" @onclick="ExecuteConfirm">@_confirmVerb</button>
+                    </div>
                 </div>
             </div>
         }

@@ -42,6 +42,11 @@ public partial class Index
     private bool _showStepperFlyout;
     private bool _showAbout;
 
+    private string? _confirmTitle;
+    private string? _confirmMessage;
+    private string  _confirmVerb = "Löschen";
+    private Func<Task>? _pendingConfirmAction;
+
     private string _theme = "dark";
     private string _density = "comfortable";
     private string _accentPreset = "Gelb";
@@ -158,6 +163,35 @@ public partial class Index
     }
 
     private void CloseAbout() => _showAbout = false;
+
+    private void AskClearAllData()
+    {
+        _showSettings = false;
+        AskConfirm(
+            "Alle lokalen Daten entfernen",
+            "Layouts, Eingaben und Einstellungen werden vollständig gelöscht. Die Seite wird anschließend neu geladen.",
+            async () => { await LocalStorage.ClearAsync(); await JS.InvokeVoidAsync("location.reload"); },
+            "Alles löschen"
+        );
+    }
+
+    private void AskConfirm(string title, string message, Func<Task> action, string verb = "Löschen")
+    {
+        _confirmTitle   = title;
+        _confirmMessage = message;
+        _confirmVerb    = verb;
+        _pendingConfirmAction = action;
+    }
+
+    private async Task ExecuteConfirm()
+    {
+        if (_pendingConfirmAction is null) return;
+        var action = _pendingConfirmAction;
+        _pendingConfirmAction = null;
+        await action();
+    }
+
+    private void CancelConfirm() => _pendingConfirmAction = null;
 
     private async Task ApplySettings()
     {

@@ -1938,6 +1938,11 @@ textarea {
     background: var(--color-bg-hover);
     color: var(--color-text);
 }
+.settings-about-btn--danger { color: var(--color-danger); }
+.settings-about-btn--danger:hover {
+    background: color-mix(in oklch, var(--color-danger) 12%, transparent);
+    color: var(--color-danger);
+}
 
 /* Block Type List in Modal */
 .block-type-list {

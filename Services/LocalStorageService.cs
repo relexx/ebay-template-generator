@@ -7,6 +7,7 @@ public interface ILocalStorageService
 {
     Task<T?> GetItemAsync<T>(string key);
     Task SetItemAsync<T>(string key, T value);
+    Task ClearAsync();
 }
 
 public class LocalStorageService(IJSRuntime js) : ILocalStorageService
@@ -22,4 +23,6 @@ public class LocalStorageService(IJSRuntime js) : ILocalStorageService
         var json = JsonSerializer.Serialize(value, Helpers.JsonOptions);
         await js.InvokeVoidAsync("localStorage.setItem", key, json);
     }
+
+    public Task ClearAsync() => js.InvokeVoidAsync("localStorage.clear").AsTask();
 }
