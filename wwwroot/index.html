@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de" data-theme="dark" data-density="comfortable">
+<html lang="de" data-theme="dark" data-density="comfortable" data-animations="on">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -149,6 +149,9 @@
         };
         window.getDensity = function() {
             return document.documentElement.getAttribute('data-density') || 'comfortable';
+        };
+        window.setAnimationsEnabled = function(enabled) {
+            document.documentElement.setAttribute('data-animations', enabled ? 'on' : 'off');
         };
 
         window.destroySortable = function(elementId) {

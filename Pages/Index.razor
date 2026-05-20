@@ -12,7 +12,7 @@
                 </svg>
             </span>
             <span class="wordmark-text">
-                <span class="accent">relexx</span><span>_tmpl</span><span class="cursor"></span>
+                <span class="accent">relexx</span><span class="wordmark-tmpl">_tmpl</span><span class="cursor"></span>
             </span>
         </div>
 
@@ -98,6 +98,19 @@
                         }
                     </div>
                 </div>
+                <div class="settings-section">
+                    <span class="settings-section-label">Animationen</span>
+                    <div class="settings-toggle-row">
+                        <button class="settings-toggle-btn @(_animationsEnabled ? "active" : "")"
+                                @onclick="ToggleAnimations">
+                            <Icon Name="zap" Size="13" /> An
+                        </button>
+                        <button class="settings-toggle-btn @(!_animationsEnabled ? "active" : "")"
+                                @onclick="ToggleAnimations">
+                            Aus
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
@@ -119,7 +132,7 @@
 @code {
     private RenderFragment RenderLayoutPhase() => __builder =>
     {
-        <div class="phase-content layout-phase">
+        <div class="phase-content layout-phase @PhaseAnimClass">
             <div class="page-head">
                 <div class="page-head-title">
                     <h1>Layout</h1>
@@ -161,7 +174,7 @@
                         <option value="@l.Id">@l.Name @(l.IsDefault ? "(Standard)" : "")</option>
                     }
                 </select>
-                <span class="toolbar-meta">@currentLayout.Blocks.Count Blöcke · @GetRelativeTime(currentLayout.ModifiedAt)</span>
+                <span class="toolbar-meta"><span @key="@($"cnt-{currentLayout.Blocks.Count}")" class="meta-count">@currentLayout.Blocks.Count Blöcke</span> · @GetRelativeTime(currentLayout.ModifiedAt)</span>
             </div>
 
             <div class="layout-editor">
@@ -178,7 +191,7 @@
                                     @foreach (var block in currentLayout.Blocks.OrderBy(b => b.Order))
                                     {
                                         <div @key="block.Id"
-                                             class="block-item @(selectedBlockId == block.Id ? "selected" : "")"
+                                             class="block-item @(selectedBlockId == block.Id ? "selected" : "") @(_newlyAddedBlockId == block.Id ? "block-enter" : "") @(_removingBlockIds.Contains(block.Id) ? "block-exit" : "")"
                                              data-id="@block.Id"
                                              @onclick="() => SelectBlock(block)">
                                             <span class="drag-handle"><Icon Name="gripVert" Size="14" /></span>
@@ -398,7 +411,7 @@
 
     private RenderFragment RenderInputPhase() => __builder =>
     {
-        <div class="phase-content input-phase">
+        <div class="phase-content input-phase @PhaseAnimClass">
             <div class="page-head">
                 <div class="page-head-title">
                     <h1>Eingabe</h1>
@@ -527,7 +540,7 @@
 
     private RenderFragment RenderPreviewPhase() => __builder =>
     {
-        <div class="phase-content preview-phase">
+        <div class="phase-content preview-phase @PhaseAnimClass">
             <div class="page-head">
                 <div class="page-head-title">
                     <h1>Vorschau</h1>
@@ -549,7 +562,7 @@
 
             <div class="preview-shell">
                 <div class="preview-frame @(_previewDevice == "mobile" ? "is-mobile" : "")">
-                    <iframe @ref="_previewFrame" class="preview-iframe" title="Vorschau"></iframe>
+                    <iframe @ref="_previewFrame" class="preview-iframe @(_iframeLoaded ? "is-loaded" : "")" @onload="HandleIframeLoaded" title="Vorschau"></iframe>
                 </div>
             </div>
 
@@ -566,7 +579,7 @@
 
     private RenderFragment RenderHtmlPhase() => __builder =>
     {
-        <div class="phase-content html-phase">
+        <div class="phase-content html-phase @PhaseAnimClass">
             <div class="page-head">
                 <div class="page-head-title">
                     <h1>HTML</h1>
@@ -676,7 +689,7 @@
     {
         @if (!string.IsNullOrEmpty(notification))
         {
-            <div class="notification @(notificationSuccess ? "success" : "error")">@notification</div>
+            <div class="notification @(notificationSuccess ? "success" : "error") @(_notificationLeaving ? "is-leaving" : "")">@notification</div>
         }
     };
 }

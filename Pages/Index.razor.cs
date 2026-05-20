@@ -42,11 +42,13 @@ public partial class Index
     private string _theme = "dark";
     private string _density = "comfortable";
     private string _accentPreset = "Gelb";
+    private bool _animationsEnabled = true;
 
     private string _blockIdError = string.Empty;
 
     private string notification = string.Empty;
     private bool notificationSuccess;
+    private bool _notificationLeaving;
     private CancellationTokenSource? notificationCts;
 
     private DotNetObjectReference<Index>? dotNetHelper;
@@ -54,6 +56,13 @@ public partial class Index
 
     private string _previewDevice = "desktop";
     private ElementReference _previewFrame;
+    private bool _iframeLoaded;
+
+    // Animation state
+    private int _navDirection;           // 1 = forward, -1 = backward, 0 = initial
+    private string? _newlyAddedBlockId;
+    private readonly HashSet<string> _removingBlockIds = new();
+    private string PhaseAnimClass => _navDirection > 0 ? "phase-enter-right" : _navDirection < 0 ? "phase-enter-left" : string.Empty;
 
     // OKLCH accent presets: (L, C, H) + display hex
     internal record AccentPreset(double L, double C, double H, string Hex);
@@ -122,6 +131,7 @@ public partial class Index
                 _theme = saved.Theme;
                 _density = saved.Density;
                 _accentPreset = saved.AccentPreset;
+                _animationsEnabled = saved.AnimationsEnabled;
             }
         }
         catch { }
@@ -133,6 +143,7 @@ public partial class Index
     {
         await JS.InvokeVoidAsync("setTheme", _theme);
         await JS.InvokeVoidAsync("setDensity", _density);
+        await JS.InvokeVoidAsync("setAnimationsEnabled", _animationsEnabled);
 
         if (AccentPresets.TryGetValue(_accentPreset, out var p))
             await JS.InvokeVoidAsync("setAccent", p.L, p.C, p.H);
@@ -140,7 +151,14 @@ public partial class Index
 
     private async Task SaveSettings()
         => await LocalStorage.SetItemAsync(Constants.Storage.SettingsKey,
-               new AppSettings(_theme, _density, _accentPreset));
+               new AppSettings(_theme, _density, _accentPreset, _animationsEnabled));
+
+    private async Task ToggleAnimations()
+    {
+        _animationsEnabled = !_animationsEnabled;
+        await JS.InvokeVoidAsync("setAnimationsEnabled", _animationsEnabled);
+        await SaveSettings();
+    }
 
     private async Task SetTheme(string theme)
     {
@@ -443,6 +461,7 @@ public partial class Index
         var block = BlockDefinition.CreateDefault(type, order);
         currentLayout.Blocks.Add(block);
         selectedBlockId = block.Id;
+        _newlyAddedBlockId = block.Id;
         showAddBlockDialog = false;
 
         if (type == BlockType.FixedText)
@@ -450,14 +469,23 @@ public partial class Index
 
         await SaveLayouts();
         await InitSortable();
+
+        await Task.Delay(350);
+        _newlyAddedBlockId = null;
     }
 
     private async Task DeleteBlock()
     {
         if (SelectedBlock is null) return;
-        currentLayout.Blocks.Remove(SelectedBlock);
-        currentLayout.ReorderBlocks();
+        var blockToDelete = SelectedBlock;
+        _removingBlockIds.Add(blockToDelete.Id);
         selectedBlockId = null;
+        StateHasChanged();
+
+        await Task.Delay(280);
+        _removingBlockIds.Remove(blockToDelete.Id);
+        currentLayout.Blocks.Remove(blockToDelete);
+        currentLayout.ReorderBlocks();
         await SaveLayouts();
         await InitSortable();
     }
@@ -466,8 +494,6 @@ public partial class Index
     {
         if (SelectedBlock is null) return;
         SelectedBlock.Options = BlockOptions.CreateDefault(SelectedBlock.Type);
-        SelectedBlock.Icon = SelectedBlock.Type.GetDefaultIcon();
-        SelectedBlock.Title = SelectedBlock.Type.GetDefaultTitle();
         await SaveLayouts();
     }
 
@@ -719,6 +745,9 @@ public partial class Index
     // ═══════════════ NAVIGATION & HTML ═══════════════
     private async Task GoToPhase(int phase)
     {
+        _navDirection = phase > currentPhase ? 1 : phase < currentPhase ? -1 : 0;
+        _iframeLoaded = false;
+
         if (phase >= 2)
         {
             article.Layout = currentLayout;
@@ -791,6 +820,7 @@ public partial class Index
         notificationCts?.Cancel();
         notificationCts = new CancellationTokenSource();
 
+        _notificationLeaving = false;
         notification = msg;
         notificationSuccess = success;
         StateHasChanged();
@@ -798,9 +828,20 @@ public partial class Index
         try
         {
             await Task.Delay(Constants.Timing.NotificationDurationMs, notificationCts.Token);
+            _notificationLeaving = true;
+            StateHasChanged();
+            await Task.Delay(360, notificationCts.Token);
             notification = string.Empty;
+            _notificationLeaving = false;
             StateHasChanged();
         }
         catch (TaskCanceledException) { }
     }
+
+    private void HandleIframeLoaded()
+    {
+        _iframeLoaded = true;
+        StateHasChanged();
+    }
 }
+

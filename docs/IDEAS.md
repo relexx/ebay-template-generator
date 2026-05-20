@@ -16,6 +16,7 @@ Gesammelte Ideen aus Brainstorming-Sessions. Keine Priorisierung, kein Versprech
 - **Preview-Iframe** — Fade-in nach dem Laden statt harter Erscheinung
 - **Toolbar-Meta Counter** — `count-up`-Animation beim Ändern der Blockanzahl
 - **Wortmarke-Animation** — Alle 10-20 Sekunden wird "relexx_tmpl" wie in einer Konsole neu geschrieben
+- **Animationen ausschalten** — Toggle in den Einstellungen, um Animationen zu aktivieren/deaktivieren. Standard ist AN.
 
 ---
 
