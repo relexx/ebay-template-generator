@@ -101,6 +101,15 @@
             });
         };
         
+        // Keyboard navigation: ← / → between stages (ignores inputs)
+        window.registerKeyNav = function(dotNetHelper) {
+            document.addEventListener('keydown', function(e) {
+                if (e.target.matches('input, textarea, select')) return;
+                if (e.key === 'ArrowRight') dotNetHelper.invokeMethodAsync('NavigatePhase', 1);
+                if (e.key === 'ArrowLeft')  dotNetHelper.invokeMethodAsync('NavigatePhase', -1);
+            });
+        };
+
         // Settings helpers — write data-* attributes and CSS vars on <html>
         window.setTheme = function(theme) {
             document.documentElement.setAttribute('data-theme', theme);

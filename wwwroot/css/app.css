@@ -127,11 +127,65 @@ body {
     flex-direction: column;
 }
 
-/* Header */
+/* ========== Wordmark ========== */
+.wordmark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.wordmark-glyph {
+    display: inline-flex;
+    color: var(--color-text);
+    flex-shrink: 0;
+}
+
+.wordmark-glyph svg {
+    width: 24px;
+    height: 24px;
+}
+
+.wordmark-text {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.wordmark-text .accent {
+    color: var(--color-accent);
+}
+
+.wordmark-text .cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: var(--color-accent);
+    margin-left: 1px;
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.wordmark-sub {
+    font-size: 0.72rem;
+    color: var(--color-text-dim);
+    white-space: nowrap;
+    display: none;
+}
+
+/* ========== Header ========== */
 .app-header {
-    background: var(--color-bg-elevated);
     border-bottom: 1px solid var(--color-border);
-    padding: 12px 24px;
+    padding: 10px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -139,16 +193,8 @@ body {
     position: sticky;
     top: 0;
     z-index: 100;
-    backdrop-filter: blur(10px);
-    background: rgba(26, 29, 39, 0.95);
-}
-
-.app-header h1 {
-    margin: 0;
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: var(--color-accent);
-    white-space: nowrap;
+    backdrop-filter: blur(12px);
+    background: color-mix(in oklch, var(--color-bg-elevated) 92%, transparent);
 }
 
 .header-center {
@@ -183,22 +229,90 @@ body {
     white-space: nowrap;
 }
 
-/* Phase Indicator */
-.phase-indicator {
+/* ========== Stepper ========== */
+.stepper {
     display: flex;
     align-items: center;
     gap: 0;
 }
 
-.phase-indicator-mobile {
+.step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    background: transparent;
+    border: 1px solid transparent;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+}
+
+.step:hover:not(.is-active) {
+    background: var(--color-bg-input);
+    color: var(--color-text);
+}
+
+.step.is-active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+.step.is-done {
+    color: var(--color-text);
+}
+
+.step.is-done .step-num {
+    background: var(--color-success);
+    color: white;
+}
+
+.step-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    transition: var(--transition);
+}
+
+.step.is-active .step-num {
+    background: rgba(255,255,255,0.25);
+    border-color: transparent;
+}
+
+.step-connector {
+    width: 24px;
+    height: 2px;
+    background: var(--color-border);
+    flex-shrink: 0;
+}
+
+.step-connector.is-done {
+    background: var(--color-success);
+}
+
+/* Mobile stepper */
+.stepper-mobile {
     display: none;
     align-items: center;
     gap: 4px;
 }
 
 .phase-nav-btn {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -206,7 +320,7 @@ body {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     color: var(--color-text);
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     cursor: pointer;
     transition: var(--transition);
     padding: 0;
@@ -221,6 +335,7 @@ body {
 .phase-nav-btn:not(:disabled):hover {
     background: var(--color-primary);
     border-color: var(--color-primary);
+    color: white;
 }
 
 .phase-mobile-current {
@@ -250,59 +365,7 @@ body {
 .phase-mobile-label {
     font-size: 0.9rem;
     font-weight: 500;
-}
-
-.phase {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: var(--transition);
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-}
-
-.phase:hover {
-    background: var(--color-bg-input);
-}
-
-.phase.active {
-    background: var(--color-primary);
-    border-color: var(--color-primary);
-}
-
-.phase.completed {
-    background: var(--color-success);
-    border-color: var(--color-success);
-}
-
-.phase-number {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.phase-label {
-    font-size: 0.85rem;
-    font-weight: 500;
-}
-
-.phase-connector {
-    width: 30px;
-    height: 3px;
-    background: var(--color-border);
-}
-
-.phase-connector.completed {
-    background: var(--color-success);
+    color: white;
 }
 
 /* Main Content */
@@ -571,6 +634,122 @@ body {
     border-radius: var(--radius-sm);
     font-size: 0.85rem;
     color: var(--color-text-muted);
+}
+
+/* ========== Settings Flyout ========== */
+.settings-btn {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: var(--transition);
+    flex-shrink: 0;
+    position: relative;
+}
+
+.settings-btn:hover,
+.settings-btn.open {
+    background: var(--color-bg-input);
+    color: var(--color-text);
+    border-color: var(--color-text-dim);
+}
+
+.settings-flyout {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 240px;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: 12px;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 300;
+}
+
+.settings-flyout.open {
+    display: flex;
+}
+
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.settings-section-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-dim);
+}
+
+.settings-toggle-row {
+    display: flex;
+    gap: 4px;
+}
+
+.settings-toggle-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-muted);
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.settings-toggle-btn:hover {
+    background: var(--color-bg-input);
+    color: var(--color-text);
+}
+
+.settings-toggle-btn.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+
+.accent-swatches {
+    display: flex;
+    gap: 6px;
+}
+
+.accent-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: var(--transition);
+    flex-shrink: 0;
+    outline-offset: 2px;
+}
+
+.accent-swatch:hover {
+    transform: scale(1.1);
+}
+
+.accent-swatch.active {
+    border-color: white;
+    box-shadow: 0 0 0 2px var(--color-primary);
 }
 
 /* ========== Panel Component ========== */
@@ -1296,11 +1475,11 @@ textarea {
 }
 
 @media (max-width: 640px) {
-    .phase-indicator {
+    .stepper {
         display: none;
     }
 
-    .phase-indicator-mobile {
+    .stepper-mobile {
         display: flex;
     }
 

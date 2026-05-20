@@ -3,7 +3,18 @@
 
 <div class="app-container">
     <header class="app-header">
-        <h1>relexx' Template Generator</h1>
+        <div class="wordmark" aria-label="relexx Template Generator">
+            <span class="wordmark-glyph">
+                <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="1" width="20" height="20" rx="2" stroke="currentColor" stroke-opacity="0.18" stroke-width="1"/>
+                    <path d="M5 16 L5 6 L11 6 L11 11 L16 16" stroke="var(--color-accent)" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="miter"/>
+                    <rect x="14" y="4" width="3" height="3" fill="var(--color-accent)"/>
+                </svg>
+            </span>
+            <span class="wordmark-text">
+                <span class="accent">relexx</span><span>_tmpl</span><span class="cursor"></span>
+            </span>
+        </div>
 
         <div class="header-center">
             <span class="header-title">@(string.IsNullOrWhiteSpace(article.Title) ? "Neuer Artikel" : article.Title)</span>
@@ -11,30 +22,83 @@
             <span class="header-layout">@currentLayout.Name</span>
         </div>
 
-        <div class="phase-indicator">
+        <div class="stepper" role="tablist">
             @for (var i = 0; i <= 3; i++)
             {
                 var phase = i;
-                <div class="phase @GetPhaseClass(phase)" @onclick="() => GoToPhase(phase)">
-                    <span class="phase-number">@phase</span>
-                    <span class="phase-label">@GetPhaseName(phase)</span>
-                </div>
+                var isActive = currentPhase == phase;
+                var isDone = phase < currentPhase || (_maxReached >= phase && phase != currentPhase);
+                <button class="step @(isActive ? "is-active" : "") @(isDone && !isActive ? "is-done" : "")"
+                        @onclick="async () => { if (phase <= _maxReached + 1) await GoToPhase(phase); }"
+                        role="tab" aria-selected="@isActive" disabled="@(phase > _maxReached + 1)">
+                    <span class="step-num">@phase</span>
+                    @GetPhaseName(phase)
+                </button>
                 @if (i < 3)
                 {
-                    <div class="phase-connector @(currentPhase > phase ? "completed" : "")"></div>
+                    <span class="step-connector @(currentPhase > phase ? "is-done" : "")" aria-hidden="true"></span>
                 }
             }
         </div>
 
-        <div class="phase-indicator-mobile">
+        <div class="stepper-mobile" role="navigation">
             <button class="phase-nav-btn" @onclick="async () => { if (currentPhase > 0) await GoToPhase(currentPhase - 1); }"
-                    disabled="@(currentPhase == 0)">&#8249;</button>
+                    disabled="@(currentPhase == 0)" aria-label="Zurück">&#8249;</button>
             <div class="phase-mobile-current">
                 <span class="phase-mobile-num">@currentPhase</span>
                 <span class="phase-mobile-label">@GetPhaseName(currentPhase)</span>
             </div>
-            <button class="phase-nav-btn" @onclick="async () => { if (currentPhase < 3) await GoToPhase(currentPhase + 1); }"
-                    disabled="@(currentPhase == 3)">&#8250;</button>
+            <button class="phase-nav-btn" @onclick="async () => { if (currentPhase < 3 && currentPhase < _maxReached + 1) await GoToPhase(currentPhase + 1); }"
+                    disabled="@(currentPhase == 3 || currentPhase >= _maxReached + 1)" aria-label="Weiter">&#8250;</button>
+        </div>
+
+        <div style="position:relative; flex-shrink:0;">
+            <button class="settings-btn @(_showSettings ? "open" : "")"
+                    @onclick="() => _showSettings = !_showSettings"
+                    title="Einstellungen">
+                <Icon Name="settings" Size="16" />
+            </button>
+            <div class="settings-flyout @(_showSettings ? "open" : "")">
+                <div class="settings-section">
+                    <span class="settings-section-label">Theme</span>
+                    <div class="settings-toggle-row">
+                        <button class="settings-toggle-btn @(_theme == "dark" ? "active" : "")"
+                                @onclick='async () => await SetTheme("dark")'>
+                            <Icon Name="moon" Size="13" /> Dark
+                        </button>
+                        <button class="settings-toggle-btn @(_theme == "light" ? "active" : "")"
+                                @onclick='async () => await SetTheme("light")'>
+                            <Icon Name="sun" Size="13" /> Light
+                        </button>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <span class="settings-section-label">Dichte</span>
+                    <div class="settings-toggle-row">
+                        <button class="settings-toggle-btn @(_density == "comfortable" ? "active" : "")"
+                                @onclick='async () => await SetDensity("comfortable")'>
+                            Komfort
+                        </button>
+                        <button class="settings-toggle-btn @(_density == "compact" ? "active" : "")"
+                                @onclick='async () => await SetDensity("compact")'>
+                            Kompakt
+                        </button>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <span class="settings-section-label">Akzentfarbe</span>
+                    <div class="accent-swatches">
+                        @foreach (var preset in AccentPresets)
+                        {
+                            <button class="accent-swatch @(_accentPreset == preset.Key ? "active" : "")"
+                                    style="background: @preset.Value.Hex"
+                                    title="@preset.Key"
+                                    @onclick="async () => await SetAccent(preset.Key)">
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
         </div>
     </header>
 

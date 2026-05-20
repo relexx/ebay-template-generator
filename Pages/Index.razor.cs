@@ -15,6 +15,7 @@ public partial class Index
 
     // ═══════════════ STATE ═══════════════
     private int currentPhase;
+    private int _maxReached;
     private List<LayoutTemplate> layouts = new();
     private string selectedLayoutId = LayoutTemplate.StandardLayoutId;
     private LayoutTemplate currentLayout = LayoutTemplate.CreateStandard();
@@ -30,6 +31,11 @@ public partial class Index
 
     private bool _showLayoutMore;
     private bool _showInputMore;
+    private bool _showSettings;
+
+    private string _theme = "dark";
+    private string _density = "comfortable";
+    private string _accentPreset = "Gelb";
 
     private string _blockIdError = string.Empty;
 
@@ -40,15 +46,30 @@ public partial class Index
     private DotNetObjectReference<Index>? dotNetHelper;
     private bool _needsSortableInit;
 
+    // OKLCH accent presets: (L, C, H) + display hex
+    internal record AccentPreset(double L, double C, double H, string Hex);
+    internal static readonly Dictionary<string, AccentPreset> AccentPresets = new()
+    {
+        ["Gelb"]   = new(0.82, 0.15, 91,  "#f5c518"),
+        ["Grün"]   = new(0.68, 0.18, 160, "#10b981"),
+        ["Indigo"] = new(0.62, 0.20, 264, "#6366f1"),
+        ["Orange"] = new(0.72, 0.19, 47,  "#f97316"),
+        ["Rot"]    = new(0.63, 0.22, 27,  "#ef4444"),
+    };
+
     // ═══════════════ LIFECYCLE ═══════════════
     protected override async Task OnInitializedAsync()
     {
         await LoadLayouts();
         await LoadArticle();
+        await LoadSettings();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender)
+            await JS.InvokeVoidAsync("window.registerKeyNav", DotNetObjectReference.Create(this));
+
         if (currentPhase == 0 && (firstRender || _needsSortableInit))
         {
             _needsSortableInit = false;
@@ -63,6 +84,70 @@ public partial class Index
         try { await JS.InvokeVoidAsync("destroySortable", "block-list"); }
         catch { }
         dotNetHelper?.Dispose();
+    }
+
+    // ═══════════════ SETTINGS ═══════════════
+    private async Task LoadSettings()
+    {
+        try
+        {
+            var saved = await LocalStorage.GetItemAsync<AppSettings>(Constants.Storage.SettingsKey);
+            if (saved is not null)
+            {
+                _theme = saved.Theme;
+                _density = saved.Density;
+                _accentPreset = saved.AccentPreset;
+            }
+        }
+        catch { }
+
+        await ApplySettings();
+    }
+
+    private async Task ApplySettings()
+    {
+        await JS.InvokeVoidAsync("setTheme", _theme);
+        await JS.InvokeVoidAsync("setDensity", _density);
+
+        if (AccentPresets.TryGetValue(_accentPreset, out var p))
+            await JS.InvokeVoidAsync("setAccent", p.L, p.C, p.H);
+    }
+
+    private async Task SaveSettings()
+        => await LocalStorage.SetItemAsync(Constants.Storage.SettingsKey,
+               new AppSettings(_theme, _density, _accentPreset));
+
+    private async Task SetTheme(string theme)
+    {
+        _theme = theme;
+        await JS.InvokeVoidAsync("setTheme", theme);
+        await SaveSettings();
+    }
+
+    private async Task SetDensity(string density)
+    {
+        _density = density;
+        await JS.InvokeVoidAsync("setDensity", density);
+        await SaveSettings();
+    }
+
+    private async Task SetAccent(string preset)
+    {
+        _accentPreset = preset;
+        if (AccentPresets.TryGetValue(preset, out var p))
+            await JS.InvokeVoidAsync("setAccent", p.L, p.C, p.H);
+        await SaveSettings();
+    }
+
+    // ═══════════════ KEYBOARD NAVIGATION ═══════════════
+    [JSInvokable]
+    public async Task NavigatePhase(int delta)
+    {
+        var next = currentPhase + delta;
+        if (next < 0 || next > 3) return;
+        if (next > _maxReached + 1) return;
+        await GoToPhase(next);
+        StateHasChanged();
     }
 
     // ═══════════════ SORTABLE ═══════════════
@@ -491,6 +576,7 @@ public partial class Index
         }
 
         currentPhase = phase;
+        if (phase > _maxReached) _maxReached = phase;
         await SaveArticle();
 
         if (phase == 0)
