@@ -7,8 +7,8 @@
             <span class="wordmark-glyph">
                 <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="1" y="1" width="20" height="20" rx="2" stroke="currentColor" stroke-opacity="0.18" stroke-width="1"/>
-                    <path d="M5 16 L5 6 L11 6 L11 11 L16 16" stroke="var(--color-accent)" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="miter"/>
-                    <rect x="14" y="4" width="3" height="3" fill="var(--color-accent)"/>
+                    <path d="M5 16 L5 6 L11 6 L11 11 L16 16" stroke="var(--color-accent)" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"/>
+                    <rect x="14" y="5" width="3" height="3" fill="var(--color-accent)"/>
                 </svg>
             </span>
             <span class="wordmark-text">
@@ -52,9 +52,9 @@
                     disabled="@(currentPhase == 3 || currentPhase >= _maxReached + 1)" aria-label="Weiter">&#8250;</button>
         </div>
 
-        <div style="position:relative; flex-shrink:0;">
+        <div id="settings-container" style="position:relative; flex-shrink:0;">
             <button class="settings-btn @(_showSettings ? "open" : "")"
-                    @onclick="() => _showSettings = !_showSettings"
+                    @onclick="ToggleSettings"
                     title="Einstellungen">
                 <Icon Name="settings" Size="16" />
             </button>
@@ -127,10 +127,14 @@
                 </div>
                 <div class="page-head-actions">
                     <div class="btn-stack">
-                        <button class="btn btn-secondary" @onclick="CreateNewLayout" title="Neues Layout">
+                        <button class="btn btn-secondary" @onclick="OpenNewLayoutDialog" title="Neues Layout">
                             <Icon Name="plus" Size="14" /> Neu
                         </button>
-                        <button class="btn btn-secondary" @onclick="DuplicateLayout" title="Duplizieren">
+                        <button class="btn btn-secondary" @onclick="OpenRenameDialog" title="Layout umbenennen"
+                                disabled="@currentLayout.IsDefault">
+                            <Icon Name="edit" Size="14" /> Umbenennen
+                        </button>
+                        <button class="btn btn-secondary" @onclick="OpenDuplicateLayoutDialog" title="Duplizieren">
                             <Icon Name="copy" Size="14" /> Duplizieren
                         </button>
                         <button class="btn btn-secondary" @onclick="ExportLayout" title="Exportieren">
@@ -141,6 +145,11 @@
                             <Icon Name="upload" Size="14" /> Import
                         </button>
                         <InputFile id="layout-import" OnChange="ImportLayout" accept=".json" style="display:none" />
+                        <button class="btn btn-danger btn-secondary" @onclick="DeleteLayout"
+                                disabled="@(currentLayout.IsDefault || layouts.Count <= 1)"
+                                title="Layout löschen">
+                            <Icon Name="trash" Size="14" /> Löschen
+                        </button>
                     </div>
                 </div>
             </div>
@@ -153,54 +162,105 @@
                     }
                 </select>
                 <span class="toolbar-meta">@currentLayout.Blocks.Count Blöcke · @GetRelativeTime(currentLayout.ModifiedAt)</span>
-                <div style="margin-left:auto">
-                    <button class="btn btn-danger btn-small" @onclick="DeleteLayout"
-                            disabled="@(currentLayout.IsDefault || layouts.Count <= 1)"
-                            title="Layout löschen">
-                        <Icon Name="trash" Size="14" />
-                    </button>
-                </div>
             </div>
 
             <div class="layout-editor">
-                <div class="layout-sidebar">
-                    <Panel Title="Layout" Icon="layers">
-                        <Field Label="Name">
-                            <input type="text" @bind="currentLayout.Name" @bind:after="SaveLayouts"
-                                   disabled="@currentLayout.IsDefault" placeholder="Layout-Name" />
-                        </Field>
-                    </Panel>
+                <div class="layout-split">
+                    <div class="layout-sidebar">
+                        <Panel Title="Blöcke" Icon="blocks" Badge="@currentLayout.Blocks.Count.ToString()">
+                            <Actions>
+                                <button class="btn btn-small btn-accent" @onclick="() => showAddBlockDialog = true" title="Block hinzufügen">
+                                    <Icon Name="plus" Size="14" />
+                                </button>
+                            </Actions>
+                            <ChildContent>
+                                <div class="block-list" id="block-list">
+                                    @foreach (var block in currentLayout.Blocks.OrderBy(b => b.Order))
+                                    {
+                                        <div @key="block.Id"
+                                             class="block-item @(selectedBlockId == block.Id ? "selected" : "")"
+                                             data-id="@block.Id"
+                                             @onclick="() => SelectBlock(block)">
+                                            <span class="drag-handle"><Icon Name="gripVert" Size="14" /></span>
+                                            <span class="block-icon">
+                                                @if (IconHelper.Has(block.Icon))
+                                                { <Icon Name="@block.Icon" Size="16" /> }
+                                                else
+                                                { <span>@block.Icon</span> }
+                                            </span>
+                                            <span class="block-title">@block.Title</span>
+                                            <span class="block-type">@block.Type.GetDisplayName()</span>
+                                        </div>
+                                    }
+                                </div>
+                            </ChildContent>
+                        </Panel>
+                    </div>
 
-                    <Panel Title="Blöcke" Icon="blocks" Badge="@currentLayout.Blocks.Count.ToString()">
+                    <Panel Title="@(SelectedBlock is not null ? "Block bearbeiten" : "Block-Editor")"
+                           Icon="edit"
+                           Badge="@SelectedBlock?.Id">
                         <Actions>
-                            <button class="btn btn-small btn-accent" @onclick="() => showAddBlockDialog = true" title="Block hinzufügen">
-                                <Icon Name="plus" Size="14" />
-                            </button>
+                            @if (SelectedBlock is not null)
+                            {
+                                <button class="btn btn-danger btn-small" @onclick="DeleteBlock" title="Block löschen">
+                                    <Icon Name="trash" Size="14" />
+                                </button>
+                            }
                         </Actions>
                         <ChildContent>
-                            <div class="block-list" id="block-list">
-                                @foreach (var block in currentLayout.Blocks.OrderBy(b => b.Order))
+                        @if (SelectedBlock is not null)
+                        {
+                            <Field Label="Id" Hint="Eindeutiger Bezeichner für JSON-Export">
+                                <input type="text" value="@SelectedBlock.Id" class="mono @(!string.IsNullOrEmpty(_blockIdError) ? "input-error" : string.Empty)"
+                                       @onchange="async e => await ChangeBlockId(SelectedBlock, e.Value?.ToString() ?? string.Empty)"
+                                       placeholder="block-id" />
+                                @if (!string.IsNullOrEmpty(_blockIdError))
                                 {
-                                    <div @key="block.Id"
-                                         class="block-item @(selectedBlockId == block.Id ? "selected" : "")"
-                                         data-id="@block.Id"
-                                         @onclick="() => SelectBlock(block)">
-                                        <span class="drag-handle"><Icon Name="gripVert" Size="14" /></span>
-                                        <span class="block-icon">
-                                            @if (IconHelper.Has(block.Icon))
-                                            { <Icon Name="@block.Icon" Size="16" /> }
-                                            else
-                                            { <span>@block.Icon</span> }
-                                        </span>
-                                        <span class="block-title">@block.Title</span>
-                                        <span class="block-type">@block.Type.GetDisplayName()</span>
-                                    </div>
+                                    <span class="field-error">@_blockIdError</span>
                                 }
+                            </Field>
+
+                            <Field Label="Block-Typ">
+                                <select @bind="SelectedBlock.Type" @bind:after="OnBlockTypeChanged">
+                                    @foreach (BlockType t in Enum.GetValues<BlockType>())
+                                    {
+                                        <option value="@t">@t.GetDisplayName()</option>
+                                    }
+                                </select>
+                            </Field>
+
+                            <Field Label="Icon">
+                                <div class="icon-picker">
+                                    @foreach (var iconName in Constants.AvailableIcons)
+                                    {
+                                        <button type="button" class="icon-tile @(SelectedBlock.Icon == iconName ? "is-active" : "")"
+                                                @onclick="() => SetBlockIcon(iconName)" title="@iconName">
+                                            <Icon Name="@iconName" Size="18" StrokeWidth="1.6" />
+                                        </button>
+                                    }
+                                </div>
+                            </Field>
+
+                            <Field Label="Überschrift">
+                                <input type="text" @bind="SelectedBlock.Title" @bind:after="SaveLayouts" />
+                            </Field>
+
+                            @RenderBlockOptions(SelectedBlock)
+                        }
+                        else
+                        {
+                            <div class="no-selection">
+                                <p>Wähle einen Block aus der Liste.</p>
+                                <p>Blöcke per Drag & Drop neu anordnen.</p>
                             </div>
+                        }
                         </ChildContent>
                     </Panel>
+                </div>
 
-                    <Panel Title="Farbschema" Icon="palette">
+                <Panel Title="Farbschema" Icon="palette">
+                    <div class="color-panel-fields">
                         <Field Label="Primär">
                             <div class="color-row">
                                 <input type="color" @bind="currentLayout.Colors.PrimaryColor" @bind:after="SaveLayouts" />
@@ -219,74 +279,13 @@
                                 <input type="text" class="color-text mono" @bind="currentLayout.Colors.BackgroundColor" @bind:after="SaveLayouts" />
                             </div>
                         </Field>
-                    </Panel>
-                </div>
-
-                <Panel Title="@(SelectedBlock is not null ? "Block bearbeiten" : "Block-Editor")"
-                       Icon="edit"
-                       Badge="@SelectedBlock?.Id">
-                    <Actions>
-                        @if (SelectedBlock is not null)
-                        {
-                            <button class="btn btn-danger btn-small" @onclick="DeleteBlock" title="Block löschen">
-                                <Icon Name="trash" Size="14" />
-                            </button>
-                        }
-                    </Actions>
-                    <ChildContent>
-                    @if (SelectedBlock is not null)
-                    {
-                        <Field Label="Id" Hint="Eindeutiger Bezeichner für JSON-Export">
-                            <input type="text" value="@SelectedBlock.Id" class="mono @(!string.IsNullOrEmpty(_blockIdError) ? "input-error" : string.Empty)"
-                                   @onchange="async e => await ChangeBlockId(SelectedBlock, e.Value?.ToString() ?? string.Empty)"
-                                   placeholder="block-id" />
-                            @if (!string.IsNullOrEmpty(_blockIdError))
-                            {
-                                <span class="field-error">@_blockIdError</span>
-                            }
-                        </Field>
-
-                        <Field Label="Block-Typ">
-                            <select @bind="SelectedBlock.Type" @bind:after="OnBlockTypeChanged">
-                                @foreach (BlockType t in Enum.GetValues<BlockType>())
-                                {
-                                    <option value="@t">@t.GetDisplayName()</option>
-                                }
-                            </select>
-                        </Field>
-
-                        <Field Label="Icon">
-                            <div class="icon-picker">
-                                @foreach (var iconName in Constants.AvailableIcons)
-                                {
-                                    <button type="button" class="icon-tile @(SelectedBlock.Icon == iconName ? "is-active" : "")"
-                                            @onclick="() => SetBlockIcon(iconName)" title="@iconName">
-                                        <Icon Name="@iconName" Size="18" StrokeWidth="1.6" />
-                                    </button>
-                                }
-                            </div>
-                        </Field>
-
-                        <Field Label="Überschrift">
-                            <input type="text" @bind="SelectedBlock.Title" @bind:after="SaveLayouts" />
-                        </Field>
-
-                        @RenderBlockOptions(SelectedBlock)
-                    }
-                    else
-                    {
-                        <div class="no-selection">
-                            <p>Wähle einen Block aus der Liste.</p>
-                            <p>Blöcke per Drag & Drop neu anordnen.</p>
-                        </div>
-                    }
-                    </ChildContent>
+                    </div>
                 </Panel>
             </div>
 
             <div class="stage-foot">
                 <div class="stage-foot-spacer"></div>
-                <button class="btn btn-primary btn-large" @onclick="() => GoToPhase(1)">
+                <button class="btn btn-accent btn-large" @onclick="() => GoToPhase(1)">
                     Eingabe <Icon Name="arrowRight" Size="16" />
                 </button>
             </div>
@@ -413,10 +412,10 @@
                             <Icon Name="upload" Size="14" /> Import
                         </button>
                         <InputFile id="article-import" OnChange="ImportArticle" accept=".json" style="display:none" />
+                        <button class="btn btn-danger btn-small" @onclick="ResetArticle" title="Zurücksetzen">
+                            <Icon Name="refresh" Size="14" />
+                        </button>
                     </div>
-                    <button class="btn btn-danger btn-small" @onclick="ResetArticle" title="Zurücksetzen">
-                        <Icon Name="refresh" Size="14" />
-                    </button>
                 </div>
             </div>
 
@@ -511,7 +510,7 @@
                 <button class="btn btn-secondary btn-large" @onclick="() => GoToPhase(0)">
                     <Icon Name="arrowLeft" Size="16" /> Layout
                 </button>
-                <button class="btn btn-primary btn-large" @onclick="() => GoToPhase(2)">
+                <button class="btn btn-accent btn-large" @onclick="() => GoToPhase(2)">
                     Vorschau <Icon Name="arrowRight" Size="16" />
                 </button>
             </div>
@@ -550,7 +549,7 @@
                 <button class="btn btn-secondary btn-large" @onclick="() => GoToPhase(1)">
                     <Icon Name="arrowLeft" Size="16" /> Eingabe
                 </button>
-                <button class="btn btn-primary btn-large" @onclick="() => GoToPhase(3)">
+                <button class="btn btn-accent btn-large" @onclick="() => GoToPhase(3)">
                     HTML <Icon Name="arrowRight" Size="16" />
                 </button>
             </div>
@@ -566,15 +565,18 @@
                     <p class="page-sub">Generierten Code kopieren oder herunterladen</p>
                 </div>
                 <div class="page-head-actions">
+                    <span class="badge badge-mono">@generatedHtml.Length Zeichen</span>
                     <span class="badge badge-mono">@generatedHtml.Split('\n').Length Zeilen</span>
                     <span class="badge badge-mono">@((System.Text.Encoding.UTF8.GetByteCount(generatedHtml) / 1024.0).ToString("F1")) kB</span>
                     <span class="badge">UTF-8 · text/html</span>
-                    <button class="btn btn-primary" @onclick="CopyHtml">
-                        <Icon Name="copy" Size="14" /> Kopieren
-                    </button>
-                    <button class="btn btn-accent" @onclick="DownloadHtml">
-                        <Icon Name="download" Size="14" /> Herunterladen
-                    </button>
+                    <div class="btn-stack">
+                        <button class="btn btn-secondary" @onclick="CopyHtml">
+                            <Icon Name="copy" Size="14" /> Kopieren
+                        </button>
+                        <button class="btn btn-secondary" @onclick="DownloadHtml">
+                            <Icon Name="download" Size="14" /> Herunterladen
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -595,6 +597,35 @@
 
     private RenderFragment RenderDialogs() => __builder =>
     {
+        @if (_showLayoutDialog)
+        {
+            var dialogTitle = _layoutDialogMode switch {
+                LayoutDialogMode.New => "Neues Layout",
+                LayoutDialogMode.Rename => "Layout umbenennen",
+                _ => "Layout duplizieren"
+            };
+            <div class="modal-overlay" @onclick="CloseLayoutDialog">
+                <div class="modal-dialog" @onclick:stopPropagation>
+                    <h3>@dialogTitle</h3>
+                    <div class="field">
+                        <div class="field-label"><span>Name</span></div>
+                        <input type="text" value="@_layoutDialogName"
+                               @oninput="e => { _layoutDialogName = e.Value?.ToString() ?? string.Empty; _dialogTouched = true; }"
+                               placeholder="Layout-Name" />
+                        @if (LayoutDialogHint is not null)
+                        {
+                            <span class="field-error">@LayoutDialogHint</span>
+                        }
+                    </div>
+                    <div class="modal-actions modal-actions-row">
+                        <button class="btn btn-secondary" @onclick="CloseLayoutDialog">Abbrechen</button>
+                        <button class="btn btn-primary" @onclick="ConfirmLayoutName"
+                                disabled="@(!IsLayoutNameValid)">Speichern</button>
+                    </div>
+                </div>
+            </div>
+        }
+
         @if (showAddBlockDialog)
         {
             <div class="modal-overlay" @onclick="() => showAddBlockDialog = false">
@@ -604,7 +635,7 @@
                         @foreach (BlockType t in Enum.GetValues<BlockType>())
                         {
                             <button class="block-type-btn" @onclick="() => AddBlock(t)">
-                                <span class="icon">@t.GetDefaultIcon()</span>
+                                <span class="icon"><Icon Name="@t.GetDefaultIcon()" Size="18" /></span>
                                 <span class="name">@t.GetDisplayName()</span>
                             </button>
                         }

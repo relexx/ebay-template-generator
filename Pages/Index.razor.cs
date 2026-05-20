@@ -29,6 +29,14 @@ public partial class Index
     private bool showImportConflict;
     private ArticleData? importedArticle;
 
+    private enum LayoutDialogMode { New, Rename, Duplicate }
+    private bool _showLayoutDialog;
+    private string _layoutDialogName = string.Empty;
+    private LayoutDialogMode _layoutDialogMode;
+    private LayoutTemplate? _layoutDialogPending;
+    private bool _dialogTouched;
+    private bool _focusDialogInput;
+
     private bool _showSettings;
 
     private string _theme = "dark";
@@ -69,7 +77,10 @@ public partial class Index
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
-            await JS.InvokeVoidAsync("window.registerKeyNav", DotNetObjectReference.Create(this));
+        {
+            dotNetHelper = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("window.registerKeyNav", dotNetHelper);
+        }
 
         if (currentPhase == 0 && (firstRender || _needsSortableInit))
         {
@@ -80,6 +91,13 @@ public partial class Index
         if (currentPhase == 2 && !string.IsNullOrEmpty(generatedHtml))
         {
             try { await JS.InvokeVoidAsync("setIframeSrcDoc", _previewFrame, generatedHtml); }
+            catch { }
+        }
+
+        if (_focusDialogInput)
+        {
+            _focusDialogInput = false;
+            try { await JS.InvokeVoidAsync("focusAndSelect", ".modal-dialog input[type='text']"); }
             catch { }
         }
     }
@@ -144,6 +162,23 @@ public partial class Index
         if (AccentPresets.TryGetValue(preset, out var p))
             await JS.InvokeVoidAsync("setAccent", p.L, p.C, p.H);
         await SaveSettings();
+    }
+
+    private async Task ToggleSettings()
+    {
+        _showSettings = !_showSettings;
+        if (_showSettings)
+        {
+            dotNetHelper ??= DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("registerClickOutside", "settings-container", dotNetHelper, "CloseSettings");
+        }
+    }
+
+    [JSInvokable]
+    public void CloseSettings()
+    {
+        _showSettings = false;
+        StateHasChanged();
     }
 
     // ═══════════════ KEYBOARD NAVIGATION ═══════════════
@@ -225,32 +260,99 @@ public partial class Index
         await InitSortable();
     }
 
-    private async Task CreateNewLayout()
+    private void OpenNewLayoutDialog()
     {
-        var newLayout = new LayoutTemplate
-        {
-            Name = "Neues Layout",
-            Blocks = new()
-            {
-                BlockDefinition.CreateDefault(BlockType.Image),
-                BlockDefinition.CreateDefault(BlockType.RichText, 1)
-            }
-        };
-        layouts.Add(newLayout);
-        selectedLayoutId = newLayout.Id;
-        currentLayout = newLayout;
-        selectedBlockId = null;
-        await SaveLayouts();
+        _layoutDialogName = string.Empty;
+        _layoutDialogMode = LayoutDialogMode.New;
+        _layoutDialogPending = null;
+        _dialogTouched = false;
+        _focusDialogInput = true;
+        _showLayoutDialog = true;
     }
 
-    private async Task DuplicateLayout()
+    private void OpenRenameDialog()
     {
-        var copy = currentLayout.Clone();
-        layouts.Add(copy);
-        selectedLayoutId = copy.Id;
-        currentLayout = copy;
-        selectedBlockId = null;
+        _layoutDialogName = currentLayout.Name;
+        _layoutDialogMode = LayoutDialogMode.Rename;
+        _layoutDialogPending = null;
+        _dialogTouched = false;
+        _focusDialogInput = true;
+        _showLayoutDialog = true;
+    }
+
+    private void OpenDuplicateLayoutDialog()
+    {
+        _layoutDialogPending = currentLayout.Clone();
+        _layoutDialogName = _layoutDialogPending.Name;
+        _layoutDialogMode = LayoutDialogMode.Duplicate;
+        _dialogTouched = false;
+        _focusDialogInput = true;
+        _showLayoutDialog = true;
+    }
+
+    private bool IsLayoutNameValid => !string.IsNullOrWhiteSpace(_layoutDialogName) && IsLayoutNameUnique();
+
+    private string? LayoutDialogHint =>
+        !string.IsNullOrWhiteSpace(_layoutDialogName) && !IsLayoutNameUnique()
+            ? "Dieser Name ist bereits vergeben."
+            : _dialogTouched && string.IsNullOrWhiteSpace(_layoutDialogName)
+                ? "Name darf nicht leer sein."
+                : null;
+
+    private bool IsLayoutNameUnique()
+    {
+        var trimmed = _layoutDialogName.Trim();
+        return _layoutDialogMode == LayoutDialogMode.Rename
+            ? !layouts.Any(l => l.Id != currentLayout.Id && l.Name.Equals(trimmed, StringComparison.OrdinalIgnoreCase))
+            : !layouts.Any(l => l.Name.Equals(trimmed, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task ConfirmLayoutName()
+    {
+        if (!IsLayoutNameValid) return;
+        var name = _layoutDialogName.Trim();
+
+        switch (_layoutDialogMode)
+        {
+            case LayoutDialogMode.New:
+                var newLayout = new LayoutTemplate
+                {
+                    Name = name,
+                    Blocks = new()
+                    {
+                        BlockDefinition.CreateDefault(BlockType.Image),
+                        BlockDefinition.CreateDefault(BlockType.RichText, 1)
+                    }
+                };
+                layouts.Add(newLayout);
+                selectedLayoutId = newLayout.Id;
+                currentLayout = newLayout;
+                selectedBlockId = null;
+                break;
+
+            case LayoutDialogMode.Rename:
+                currentLayout.Name = name;
+                break;
+
+            case LayoutDialogMode.Duplicate:
+                _layoutDialogPending!.Name = name;
+                layouts.Add(_layoutDialogPending);
+                selectedLayoutId = _layoutDialogPending.Id;
+                currentLayout = _layoutDialogPending;
+                selectedBlockId = null;
+                _layoutDialogPending = null;
+                break;
+        }
+
         await SaveLayouts();
+        _showLayoutDialog = false;
+    }
+
+    private void CloseLayoutDialog()
+    {
+        _showLayoutDialog = false;
+        _layoutDialogPending = null;
+        _dialogTouched = false;
     }
 
     private async Task DeleteLayout()

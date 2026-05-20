@@ -158,6 +158,26 @@
                 el._sortable = null;
             }
         };
+
+        // Close a flyout when a click lands outside the given element
+        window.registerClickOutside = function(elementId, dotNetHelper, methodName) {
+            const handler = function(e) {
+                const el = document.getElementById(elementId);
+                if (!el || !el.contains(e.target)) {
+                    document.removeEventListener('click', handler);
+                    dotNetHelper.invokeMethodAsync(methodName);
+                }
+            };
+            setTimeout(() => document.addEventListener('click', handler), 0);
+        };
+
+        // Focus and select text in the first matching element
+        window.focusAndSelect = function(selector) {
+            setTimeout(() => {
+                const el = document.querySelector(selector);
+                if (el) { el.focus(); el.select(); }
+            }, 50);
+        };
     </script>
 </body>
 </html>
