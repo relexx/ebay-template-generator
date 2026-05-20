@@ -29,8 +29,6 @@ public partial class Index
     private bool showImportConflict;
     private ArticleData? importedArticle;
 
-    private bool _showLayoutMore;
-    private bool _showInputMore;
     private bool _showSettings;
 
     private string _theme = "dark";
@@ -45,6 +43,9 @@ public partial class Index
 
     private DotNetObjectReference<Index>? dotNetHelper;
     private bool _needsSortableInit;
+
+    private string _previewDevice = "desktop";
+    private ElementReference _previewFrame;
 
     // OKLCH accent presets: (L, C, H) + display hex
     internal record AccentPreset(double L, double C, double H, string Hex);
@@ -74,6 +75,12 @@ public partial class Index
         {
             _needsSortableInit = false;
             await InitSortable();
+        }
+
+        if (currentPhase == 2 && !string.IsNullOrEmpty(generatedHtml))
+        {
+            try { await JS.InvokeVoidAsync("setIframeSrcDoc", _previewFrame, generatedHtml); }
+            catch { }
         }
     }
 

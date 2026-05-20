@@ -110,6 +110,11 @@
             });
         };
 
+        // iframe preview — set srcdoc without URL-encoding issues
+        window.setIframeSrcDoc = function(iframe, html) {
+            if (iframe) iframe.srcdoc = html;
+        };
+
         // Settings helpers — write data-* attributes and CSS vars on <html>
         window.setTheme = function(theme) {
             document.documentElement.setAttribute('data-theme', theme);
