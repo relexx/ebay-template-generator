@@ -1429,6 +1429,12 @@ textarea {
     overflow-y: auto;
 }
 
+/* Syntax highlighting */
+.html-code .code-tag     { color: #e06c75; }
+.html-code .code-attr    { color: #d19a66; }
+.html-code .code-string  { color: #98c379; }
+.html-code .code-comment { color: #5c6370; font-style: italic; }
+
 /* ========== Modal Dialog ========== */
 .modal-overlay {
     position: fixed;

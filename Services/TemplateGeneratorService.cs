@@ -1,7 +1,9 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Web;
 using EbayTemplateGenerator.Models;
 using Markdig;
+using Microsoft.AspNetCore.Components;
 
 namespace EbayTemplateGenerator.Services;
 
@@ -31,7 +33,7 @@ public class TemplateGeneratorService
         sb.AppendLine();
         
         // Main container
-        sb.AppendLine($@"<div style=""max-width: 700px; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1a1a1a; line-height: 1.6; font-size: 16px;"">");
+        sb.AppendLine($@"<div style=""max-width: 760px; margin: 0 auto; font-family: 'Geist', -apple-system, system-ui, sans-serif; color: #1a1a1a; line-height: 1.6; font-size: 16px;"">");
         sb.AppendLine();
         
         // Mobile Summary (schema.org)
@@ -104,10 +106,7 @@ public class TemplateGeneratorService
     {
         var alignment = block.Options.Alignment;
         var maxWidth = block.Options.MaxWidth;
-        var titleHtml = block.Options.ShowTitle ? $@"
-        <div style=""margin: 0 0 12px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
-          {block.Icon} {Encode(block.Title)}
-        </div>" : "";
+        var titleHtml = BlockTitleHtml(block, colors);
 
         return $@"  <!-- {block.Title} -->
   <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
@@ -126,10 +125,7 @@ public class TemplateGeneratorService
         var html = Markdown.ToHtml(content, _pipeline);
         html = html.Replace("<p>", "<p style=\"margin: 0 0 15px 0; font-size: 15px; color: #333;\">");
         html = html.Replace("<strong>", $"<strong style=\"color: {colors.PrimaryColor};\">");
-        var titleHtml = block.Options.ShowTitle ? $@"
-        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
-          {block.Icon} {Encode(block.Title)}
-        </div>" : "";
+        var titleHtml = BlockTitleHtml(block, colors);
 
         return $@"  <!-- {block.Title} -->
   <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
@@ -150,10 +146,7 @@ public class TemplateGeneratorService
         var columns = Math.Max(1, Math.Min(3, block.Options.Columns));
         var widthPercent = 100 / columns;
 
-        var titleHtmlKvg = block.Options.ShowTitle ? $@"
-        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
-          {block.Icon} {Encode(block.Title)}
-        </div>" : "";
+        var titleHtmlKvg = BlockTitleHtml(block, colors);
 
         var sb = new StringBuilder();
         sb.AppendLine($@"  <!-- {block.Title} -->
@@ -206,10 +199,7 @@ public class TemplateGeneratorService
         var showHeaders = block.Options.ShowColumnHeaders;
         var zebra = block.Options.AlternatingBackground;
 
-        var titleHtmlDt = block.Options.ShowTitle ? $@"
-        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
-          {block.Icon} {Encode(block.Title)}
-        </div>" : "";
+        var titleHtmlDt = BlockTitleHtml(block, colors);
 
         var sb = new StringBuilder();
         sb.AppendLine($@"  <!-- {block.Title} -->
@@ -262,10 +252,7 @@ public class TemplateGeneratorService
             ("linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)", "#ffffff")
         };
 
-        var titleHtmlFc = block.Options.ShowTitle ? $@"
-        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
-          {block.Icon} {Encode(block.Title)}
-        </div>" : "";
+        var titleHtmlFc = BlockTitleHtml(block, colors);
 
         var sb = new StringBuilder();
         sb.AppendLine($@"  <!-- {block.Title} -->
@@ -309,10 +296,7 @@ public class TemplateGeneratorService
         var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var bullet = block.Options.BulletChar;
 
-        var titleHtmlCl = block.Options.ShowTitle ? $@"
-        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
-          {block.Icon} {Encode(block.Title)}
-        </div>" : "";
+        var titleHtmlCl = BlockTitleHtml(block, colors);
 
         var sb = new StringBuilder();
         sb.AppendLine($@"  <!-- {block.Title} -->
@@ -348,10 +332,7 @@ public class TemplateGeneratorService
         var html = Markdown.ToHtml(content, _pipeline);
         html = html.Replace("<p>", "<p style=\"margin: 0 0 15px 0; font-size: 15px; color: #333;\">");
         html = html.Replace("<strong>", $"<strong style=\"color: {colors.PrimaryColor};\">");
-        var titleHtml = block.Options.ShowTitle ? $@"
-        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
-          {block.Icon} {Encode(block.Title)}
-        </div>" : "";
+        var titleHtml = BlockTitleHtml(block, colors);
 
         return $@"  <!-- {block.Title} (Fester Text) -->
   <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
@@ -403,6 +384,49 @@ public class TemplateGeneratorService
   </table>
 ");
         return sb.ToString();
+    }
+
+    private static string BlockTitleHtml(BlockDefinition block, ColorScheme colors)
+    {
+        if (!block.Options.ShowTitle) return string.Empty;
+        var iconHtml = IconHelper.Has(block.Icon)
+            ? IconHelper.SvgForHtml(block.Icon, colors.AccentColor, 18)
+            : $"<span style=\"margin-right:6px\">{Encode(block.Icon)}</span>";
+        return $@"
+        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
+          {iconHtml}{Encode(block.Title)}
+        </div>";
+    }
+
+    public static string SyntaxHighlightHtml(string html)
+    {
+        var escaped = System.Web.HttpUtility.HtmlEncode(html);
+
+        // Comments first (greedy match before tags)
+        escaped = Regex.Replace(escaped, @"&lt;!--.*?--&gt;",
+            m => $"<span class=\"code-comment\">{m.Value}</span>",
+            RegexOptions.Singleline);
+
+        // Tags: opening/closing/self-closing
+        escaped = Regex.Replace(escaped,
+            @"(&lt;/?)([a-zA-Z][a-zA-Z0-9]*)((?:[^&]|&(?!gt;|lt;))*?)(/?)(&gt;)",
+            m =>
+            {
+                var slash    = m.Groups[1].Value;
+                var tag      = m.Groups[2].Value;
+                var attrs    = m.Groups[3].Value;
+                var selfClose = m.Groups[4].Value;
+                var close    = m.Groups[5].Value;
+
+                // Highlight attribute names and quoted values inside attrs
+                var attrHighlighted = Regex.Replace(attrs,
+                    @"([a-zA-Z_:][a-zA-Z0-9_:\-]*)(\s*=\s*)(""[^""]*""|'[^']*')",
+                    a => $"<span class=\"code-attr\">{a.Groups[1].Value}</span>{a.Groups[2].Value}<span class=\"code-string\">{a.Groups[3].Value}</span>");
+
+                return $"{slash}<span class=\"code-tag\">{tag}</span>{attrHighlighted}{selfClose}{close}";
+            });
+
+        return escaped;
     }
 
     private static string BlockBackground(int blockIndex, ColorScheme colors)

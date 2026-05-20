@@ -578,7 +578,7 @@
             </div>
 
             <div class="html-container">
-                <pre class="html-code"><code>@generatedHtml</code></pre>
+                <pre class="html-code"><code>@((MarkupString)TemplateGeneratorService.SyntaxHighlightHtml(generatedHtml))</code></pre>
             </div>
 
             <div class="stage-foot">
