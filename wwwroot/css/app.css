@@ -172,12 +172,29 @@ input, select, textarea, button {
     height: 12px;
     background: var(--color-accent);
     margin-left: 1px;
-    animation: blink 1s step-end infinite;
+    /* blink + follow the typed text (cursor moves -1ch per erased character) */
+    animation: blink 1s step-end infinite, wordmarkCursor 26s step-end 10s infinite;
 }
 
 @keyframes blink {
     0%, 100% { opacity: 1; }
     50% { opacity: 0; }
+}
+
+/* Mirror of wordmarkType: translateX tracks the visible text end */
+@keyframes wordmarkCursor {
+    0%    { transform: translateX(0);    }
+    76.9% { transform: translateX(-1ch); }
+    78.8% { transform: translateX(-2ch); }
+    80.8% { transform: translateX(-3ch); }
+    82.7% { transform: translateX(-4ch); }
+    84.6% { transform: translateX(-5ch); }
+    88.5% { transform: translateX(-4ch); }
+    90.4% { transform: translateX(-3ch); }
+    92.3% { transform: translateX(-2ch); }
+    94.2% { transform: translateX(-1ch); }
+    96.2% { transform: translateX(0);    }
+    100%  { transform: translateX(0);    }
 }
 
 /* Wordmark typing: '_tmpl' types in/out; clip-path avoids layout shift.
