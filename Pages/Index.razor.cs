@@ -58,6 +58,7 @@ public partial class Index
     private string _previewDevice = "desktop";
     private ElementReference _previewFrame;
     private bool _iframeLoaded;
+    private string _lastSetHtml = string.Empty;
 
     // Animation state
     private int _navDirection;           // 1 = forward, -1 = backward, 0 = initial
@@ -98,8 +99,9 @@ public partial class Index
             await InitSortable();
         }
 
-        if (currentPhase == 2 && !string.IsNullOrEmpty(generatedHtml))
+        if (currentPhase == 2 && !string.IsNullOrEmpty(generatedHtml) && generatedHtml != _lastSetHtml)
         {
+            _lastSetHtml = generatedHtml;
             try { await JS.InvokeVoidAsync("setIframeSrcDoc", _previewFrame, generatedHtml); }
             catch { }
         }
@@ -765,6 +767,7 @@ public partial class Index
     {
         _navDirection = phase > currentPhase ? 1 : phase < currentPhase ? -1 : 0;
         _iframeLoaded = false;
+        _lastSetHtml = string.Empty;
         _showActionsOverflow = false;
 
         if (phase >= 2)
