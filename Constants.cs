@@ -24,7 +24,10 @@ public static class Constants
     /// <summary>UI-Zeitkonstanten</summary>
     public static class Timing
     {
-        public const int NotificationDurationMs = 3000;
+        public const int NotificationDurationMs  = 3000;
+        public const int AnimBlockAddMs          = 350;
+        public const int AnimBlockRemoveMs       = 280;
+        public const int AnimNotificationLeaveMs = 360;
     }
     
     /// <summary>Validierungsgrenzen</summary>

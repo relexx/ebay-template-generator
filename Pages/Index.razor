@@ -165,14 +165,14 @@
                 <div class="page-head-actions">
                     <div class="page-actions-strip" id="layout-actions-overflow">
                         <div class="btn-stack">
-                            <button class="btn btn-secondary" @onclick="OpenNewLayoutDialog" title="Neues Layout">
+                            <button class="btn btn-secondary" @onclick="() => OpenLayoutDialog(LayoutDialogMode.New)" title="Neues Layout">
                                 <Icon Name="plus" Size="14" /> Neu
                             </button>
-                            <button class="btn btn-secondary" @onclick="OpenRenameDialog" title="Layout umbenennen"
+                            <button class="btn btn-secondary" @onclick="() => OpenLayoutDialog(LayoutDialogMode.Rename)" title="Layout umbenennen"
                                     disabled="@currentLayout.IsDefault">
                                 <Icon Name="edit" Size="14" /> Umbenennen
                             </button>
-                            <button class="btn btn-secondary page-actions-secondary" @onclick="OpenDuplicateLayoutDialog" title="Duplizieren">
+                            <button class="btn btn-secondary page-actions-secondary" @onclick="() => OpenLayoutDialog(LayoutDialogMode.Duplicate)" title="Duplizieren">
                                 <Icon Name="copy" Size="14" /> Duplizieren
                             </button>
                             <button class="btn btn-secondary page-actions-secondary" @onclick="ExportLayout" title="Exportieren">
@@ -193,7 +193,7 @@
                                     title="Weitere Aktionen">···</button>
                         </div>
                         <div class="page-actions-flyout @(_showActionsOverflow ? "open" : "")">
-                            <button class="btn btn-secondary" @onclick="async () => { _showActionsOverflow = false; OpenDuplicateLayoutDialog(); }">
+                            <button class="btn btn-secondary" @onclick="async () => { _showActionsOverflow = false; OpenLayoutDialog(LayoutDialogMode.Duplicate); }">
                                 <Icon Name="copy" Size="14" /> Duplizieren
                             </button>
                             <button class="btn btn-secondary" @onclick="async () => { _showActionsOverflow = false; await ExportLayout(); }">
@@ -228,7 +228,7 @@
                     <div class="layout-sidebar">
                         <Panel Title="Blöcke" Icon="blocks" Badge="@currentLayout.Blocks.Count.ToString()">
                             <Actions>
-                                <button class="btn btn-small btn-accent" @onclick="() => showAddBlockDialog = true" title="Block hinzufügen">
+                                <button class="btn btn-small btn-accent" @onclick="() => _showAddBlockDialog = true" title="Block hinzufügen">
                                     <Icon Name="plus" Size="14" />
                                 </button>
                             </Actions>
@@ -568,7 +568,7 @@
                                 {
                                     <textarea value="@article.GetBlockContent(blockRef.Id)"
                                               @onchange="e => SetContent(blockRef.Id, e)"
-                                              rows="@GetTextareaRows(blockRef.Type)"
+                                              rows="@blockRef.Type.GetTextareaRows()"
                                               placeholder="@blockRef.Type.GetInputPlaceholder()"></textarea>
                                 }
                             </Field>
@@ -716,9 +716,9 @@
             </div>
         }
 
-        @if (showAddBlockDialog)
+        @if (_showAddBlockDialog)
         {
-            <div class="modal-overlay" @onclick="() => showAddBlockDialog = false">
+            <div class="modal-overlay" @onclick="() => _showAddBlockDialog = false">
                 <div class="modal-dialog" @onclick:stopPropagation>
                     <h3>Block hinzufügen</h3>
                     <div class="block-type-list">
@@ -730,7 +730,7 @@
                             </button>
                         }
                     </div>
-                    <button class="btn btn-secondary" @onclick="() => showAddBlockDialog = false">Abbrechen</button>
+                    <button class="btn btn-secondary" @onclick="() => _showAddBlockDialog = false">Abbrechen</button>
                 </div>
             </div>
         }
@@ -794,9 +794,9 @@
             </div>
         }
 
-        @if (showImportConflict)
+        @if (_showImportConflict)
         {
-            <div class="modal-overlay" @onclick="() => showImportConflict = false">
+            <div class="modal-overlay" @onclick="() => _showImportConflict = false">
                 <div class="modal-dialog" @onclick:stopPropagation>
                     <h3>⚠️ Layout-Konflikt</h3>
                     <p>Das importierte Layout unterscheidet sich vom aktuellen.</p>
@@ -806,7 +806,7 @@
                     <div class="modal-actions">
                         <button class="btn btn-primary" @onclick="ImportWithNewLayout">Layout aus Datei übernehmen</button>
                         <button class="btn btn-secondary" @onclick="ImportKeepLayout">Versuchen, Daten einzupassen</button>
-                        <button class="btn btn-secondary" @onclick="() => showImportConflict = false">Abbrechen</button>
+                        <button class="btn btn-secondary" @onclick="() => _showImportConflict = false">Abbrechen</button>
                     </div>
                 </div>
             </div>
@@ -815,9 +815,9 @@
 
     private RenderFragment RenderNotification() => __builder =>
     {
-        @if (!string.IsNullOrEmpty(notification))
+        @if (!string.IsNullOrEmpty(_notification))
         {
-            <div class="notification @(notificationSuccess ? "success" : "error") @(_notificationLeaving ? "is-leaving" : "")">@notification</div>
+            <div class="notification @(_notificationSuccess ? "success" : "error") @(_notificationLeaving ? "is-leaving" : "")">@_notification</div>
         }
     };
 }

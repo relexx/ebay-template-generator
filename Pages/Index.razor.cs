@@ -25,8 +25,8 @@ public partial class Index
     private ArticleData article = new();
     private string generatedHtml = string.Empty;
 
-    private bool showAddBlockDialog;
-    private bool showImportConflict;
+    private bool _showAddBlockDialog;
+    private bool _showImportConflict;
     private ArticleData? importedArticle;
 
     private enum LayoutDialogMode { New, Rename, Duplicate }
@@ -54,10 +54,10 @@ public partial class Index
 
     private string _blockIdError = string.Empty;
 
-    private string notification = string.Empty;
-    private bool notificationSuccess;
+    private string _notification = string.Empty;
+    private bool _notificationSuccess;
     private bool _notificationLeaving;
-    private CancellationTokenSource? notificationCts;
+    private CancellationTokenSource? _notificationCts;
 
     private DotNetObjectReference<Index>? dotNetHelper;
     private bool _needsSortableInit;
@@ -123,8 +123,8 @@ public partial class Index
 
     public async ValueTask DisposeAsync()
     {
-        notificationCts?.Cancel();
-        notificationCts?.Dispose();
+        _notificationCts?.Cancel();
+        _notificationCts?.Dispose();
         try { await JS.InvokeVoidAsync("destroySortable", "block-list"); }
         catch { }
         dotNetHelper?.Dispose();
@@ -366,32 +366,17 @@ public partial class Index
         await InitSortable();
     }
 
-    private void OpenNewLayoutDialog()
+    private void OpenLayoutDialog(LayoutDialogMode mode)
     {
-        _layoutDialogName = string.Empty;
-        _layoutDialogMode = LayoutDialogMode.New;
-        _layoutDialogPending = null;
-        _dialogTouched = false;
-        _focusDialogInput = true;
-        _showLayoutDialog = true;
-    }
-
-    private void OpenRenameDialog()
-    {
-        _layoutDialogName = currentLayout.Name;
-        _layoutDialogMode = LayoutDialogMode.Rename;
-        _layoutDialogPending = null;
-        _dialogTouched = false;
-        _focusDialogInput = true;
-        _showLayoutDialog = true;
-    }
-
-    private void OpenDuplicateLayoutDialog()
-    {
-        _layoutDialogPending = currentLayout.Clone();
-        _layoutDialogName = _layoutDialogPending.Name;
-        _layoutDialogMode = LayoutDialogMode.Duplicate;
-        _dialogTouched = false;
+        _layoutDialogMode    = mode;
+        _layoutDialogPending = mode == LayoutDialogMode.Duplicate ? currentLayout.Clone() : null;
+        _layoutDialogName    = mode switch
+        {
+            LayoutDialogMode.Rename    => currentLayout.Name,
+            LayoutDialogMode.Duplicate => _layoutDialogPending!.Name,
+            _                          => string.Empty
+        };
+        _dialogTouched    = false;
         _focusDialogInput = true;
         _showLayoutDialog = true;
     }
@@ -550,7 +535,7 @@ public partial class Index
         currentLayout.Blocks.Add(block);
         selectedBlockId = block.Id;
         _newlyAddedBlockId = block.Id;
-        showAddBlockDialog = false;
+        _showAddBlockDialog = false;
 
         if (type == BlockType.FixedText)
             article.SetBlockContent(block.Id, block.Options.FixedContent);
@@ -558,7 +543,7 @@ public partial class Index
         await SaveLayouts();
         await InitSortable();
 
-        await Task.Delay(350);
+        await Task.Delay(Constants.Timing.AnimBlockAddMs);
         _newlyAddedBlockId = null;
     }
 
@@ -570,7 +555,7 @@ public partial class Index
         selectedBlockId = null;
         StateHasChanged();
 
-        await Task.Delay(280);
+        await Task.Delay(Constants.Timing.AnimBlockRemoveMs);
         _removingBlockIds.Remove(blockToDelete.Id);
         currentLayout.Blocks.Remove(blockToDelete);
         currentLayout.ReorderBlocks();
@@ -775,7 +760,7 @@ public partial class Index
             }
             else
             {
-                showImportConflict = true;
+                _showImportConflict = true;
             }
         }
         catch (Exception ex)
@@ -799,7 +784,7 @@ public partial class Index
         currentLayout = importedArticle.Layout;
         article = importedArticle;
         PrefillFixedTextBlocks();
-        showImportConflict = false;
+        _showImportConflict = false;
         await ShowNotification("✓ Artikel mit Layout importiert!", true);
     }
 
@@ -819,7 +804,7 @@ public partial class Index
         }
 
         PrefillFixedTextBlocks();
-        showImportConflict = false;
+        _showImportConflict = false;
         await ShowNotification("✓ Daten importiert", true);
     }
 
@@ -893,36 +878,26 @@ public partial class Index
         return $"vor {(int)diff.TotalDays} Tagen";
     }
 
-    private static int GetTextareaRows(BlockType type) => type switch
-    {
-        BlockType.RichText => 6,
-        BlockType.KeyValueGrid => 7,
-        BlockType.DataTable => 8,
-        BlockType.FeatureCards => 3,
-        BlockType.CheckList => 5,
-        _ => 4
-    };
-
     private async Task TriggerImagePicker(string blockId)
         => await JS.InvokeVoidAsync("triggerClick", $"img-{blockId}");
 
     private async Task ShowNotification(string msg, bool success)
     {
-        notificationCts?.Cancel();
-        notificationCts = new CancellationTokenSource();
+        _notificationCts?.Cancel();
+        _notificationCts = new CancellationTokenSource();
 
         _notificationLeaving = false;
-        notification = msg;
-        notificationSuccess = success;
+        _notification = msg;
+        _notificationSuccess = success;
         StateHasChanged();
 
         try
         {
-            await Task.Delay(Constants.Timing.NotificationDurationMs, notificationCts.Token);
+            await Task.Delay(Constants.Timing.NotificationDurationMs, _notificationCts.Token);
             _notificationLeaving = true;
             StateHasChanged();
-            await Task.Delay(360, notificationCts.Token);
-            notification = string.Empty;
+            await Task.Delay(Constants.Timing.AnimNotificationLeaveMs, _notificationCts.Token);
+            _notification = string.Empty;
             _notificationLeaving = false;
             StateHasChanged();
         }

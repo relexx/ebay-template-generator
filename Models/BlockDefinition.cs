@@ -124,88 +124,102 @@ public class BlockOptions
 }
 
 /// <summary>
-/// Hilfsmethoden für BlockType
+/// Hilfsmethoden für BlockType — alle Metadaten zentral in einer Tabelle.
+/// Neuen BlockType hinzufügen: Enum-Wert + eine Zeile in Meta.
 /// </summary>
 public static class BlockTypeExtensions
 {
-    public static string GetDefaultIcon(this BlockType type) => type switch
+    private record BlockTypeMeta(
+        string  Icon,
+        string  DefaultTitle,
+        string  DisplayName,
+        string  InputLabel,
+        string  InputPlaceholder,
+        string? InputHint,
+        int     TextareaRows,
+        string  DemoContent
+    );
+
+    private static readonly Dictionary<BlockType, BlockTypeMeta> Meta = new()
     {
-        BlockType.Image => "image",
-        BlockType.RichText => "fileText",
-        BlockType.KeyValueGrid => "sparkles",
-        BlockType.DataTable => "barChart",
-        BlockType.FeatureCards => "target",
-        BlockType.CheckList => "box",
-        BlockType.FixedText => "pin",
-        _ => "blocks"
-    };
-    
-    public static string GetDefaultTitle(this BlockType type) => type switch
-    {
-        BlockType.Image => "Produktbild",
-        BlockType.RichText => "Beschreibung",
-        BlockType.KeyValueGrid => "Highlights",
-        BlockType.DataTable => "Technische Daten",
-        BlockType.FeatureCards => "Kompatibilität",
-        BlockType.CheckList => "Lieferumfang",
-        BlockType.FixedText => "Hinweis",
-        _ => "Block"
-    };
-    
-    public static string GetDisplayName(this BlockType type) => type switch
-    {
-        BlockType.Image => "Bild",
-        BlockType.RichText => "Fließtext",
-        BlockType.KeyValueGrid => "Stichwort-Karten",
-        BlockType.DataTable => "Datentabelle",
-        BlockType.FeatureCards => "Feature-Karten",
-        BlockType.CheckList => "Aufzählungsliste",
-        BlockType.FixedText => "Fester Text",
-        _ => "Block"
-    };
-    
-    public static string GetInputPlaceholder(this BlockType type) => type switch
-    {
-        BlockType.Image => "https://beispiel.de/bild.jpg",
-        BlockType.RichText => "**Fett** und *kursiv* werden unterstützt...",
-        BlockType.KeyValueGrid => "Titel | Beschreibung\nTitel 2 | Beschreibung 2",
-        BlockType.DataTable => "Eigenschaft | Wert\nEigenschaft 2 | Wert 2",
-        BlockType.FeatureCards => "Kategorie | Option 1, Option 2\nKategorie 2 | Option 3",
-        BlockType.CheckList => "Artikel 1\nArtikel 2\nArtikel 3",
-        BlockType.FixedText => "Text aus Layout-Vorlage (editierbar)",
-        _ => ""
-    };
-    
-    public static string? GetInputHint(this BlockType type) => type switch
-    {
-        BlockType.RichText     => "**fett** · *kursiv* · [Link](url)",
-        BlockType.KeyValueGrid => "Titel | Beschreibung",
-        BlockType.DataTable    => "Eigenschaft | Wert",
-        BlockType.FeatureCards => "Kategorie | Option 1, Option 2",
-        _ => null
+        [BlockType.Image] = new(
+            Icon:             "image",
+            DefaultTitle:     "Produktbild",
+            DisplayName:      "Bild",
+            InputLabel:       "Bild-URL oder Base64",
+            InputPlaceholder: "https://beispiel.de/bild.jpg",
+            InputHint:        null,
+            TextareaRows:     4,
+            DemoContent:      "https://placehold.co/600x400/1a1a1a/f5c518?text=Produktbild"
+        ),
+        [BlockType.RichText] = new(
+            Icon:             "fileText",
+            DefaultTitle:     "Beschreibung",
+            DisplayName:      "Fließtext",
+            InputLabel:       "Text (Markdown unterstützt)",
+            InputPlaceholder: "**Fett** und *kursiv* werden unterstützt...",
+            InputHint:        "**fett** · *kursiv* · [Link](url)",
+            TextareaRows:     6,
+            DemoContent:      "**Das Produkt** bietet herausragende Qualität und durchdachte Features.\n\nDie hochwertige Verarbeitung garantiert langlebige Zuverlässigkeit für den täglichen Einsatz."
+        ),
+        [BlockType.KeyValueGrid] = new(
+            Icon:             "sparkles",
+            DefaultTitle:     "Highlights",
+            DisplayName:      "Stichwort-Karten",
+            InputLabel:       "Pro Zeile: Titel | Beschreibung",
+            InputPlaceholder: "Titel | Beschreibung\nTitel 2 | Beschreibung 2",
+            InputHint:        "Titel | Beschreibung",
+            TextareaRows:     7,
+            DemoContent:      "Premium Qualität | Erstklassige Materialien und Verarbeitung\nInnovatives Design | Moderne Optik trifft Funktionalität\nEinfache Bedienung | Intuitive Handhabung für jeden\nLanglebigkeit | Robust und zuverlässig"
+        ),
+        [BlockType.DataTable] = new(
+            Icon:             "barChart",
+            DefaultTitle:     "Technische Daten",
+            DisplayName:      "Datentabelle",
+            InputLabel:       "Pro Zeile: Eigenschaft | Wert",
+            InputPlaceholder: "Eigenschaft | Wert\nEigenschaft 2 | Wert 2",
+            InputHint:        "Eigenschaft | Wert",
+            TextareaRows:     8,
+            DemoContent:      "Material | Aluminium / Kunststoff\nAbmessungen | 250 × 150 × 80 mm\nGewicht | 450 g\nFarbe | Schwarz\nAnschlüsse | USB-C, HDMI"
+        ),
+        [BlockType.FeatureCards] = new(
+            Icon:             "target",
+            DefaultTitle:     "Kompatibilität",
+            DisplayName:      "Feature-Karten",
+            InputLabel:       "Pro Zeile: Kategorie | Optionen",
+            InputPlaceholder: "Kategorie | Option 1, Option 2\nKategorie 2 | Option 3",
+            InputHint:        "Kategorie | Option 1, Option 2",
+            TextareaRows:     3,
+            DemoContent:      "Typ A | Standard, Premium, Pro\nTyp B | Basic, Advanced"
+        ),
+        [BlockType.CheckList] = new(
+            Icon:             "box",
+            DefaultTitle:     "Lieferumfang",
+            DisplayName:      "Aufzählungsliste",
+            InputLabel:       "Pro Zeile: Ein Eintrag",
+            InputPlaceholder: "Artikel 1\nArtikel 2\nArtikel 3",
+            InputHint:        null,
+            TextareaRows:     5,
+            DemoContent:      "1× Hauptgerät\n1× USB-C Kabel\n1× Kurzanleitung\n1× Garantiekarte"
+        ),
+        [BlockType.FixedText] = new(
+            Icon:             "pin",
+            DefaultTitle:     "Hinweis",
+            DisplayName:      "Fester Text",
+            InputLabel:       "Fester Text (Markdown, aus Layout vorbelegt)",
+            InputPlaceholder: "Text aus Layout-Vorlage (editierbar)",
+            InputHint:        null,
+            TextareaRows:     4,
+            DemoContent:      "**Hinweis:** Dies ist ein fester Textbaustein aus dem Layout."
+        ),
     };
 
-    public static string GetInputLabel(this BlockType type) => type switch
-    {
-        BlockType.Image => "Bild-URL oder Base64",
-        BlockType.RichText => "Text (Markdown unterstützt)",
-        BlockType.KeyValueGrid => "Pro Zeile: Titel | Beschreibung",
-        BlockType.DataTable => "Pro Zeile: Eigenschaft | Wert",
-        BlockType.FeatureCards => "Pro Zeile: Kategorie | Optionen",
-        BlockType.CheckList => "Pro Zeile: Ein Eintrag",
-        BlockType.FixedText => "Fester Text (Markdown, aus Layout vorbelegt)",
-        _ => "Inhalt"
-    };
-    
-    public static string GetDemoContent(this BlockType type) => type switch
-    {
-        BlockType.Image => "https://placehold.co/600x400/1a1a1a/f5c518?text=Produktbild",
-        BlockType.RichText => $"**Das Produkt** bietet herausragende Qualität und durchdachte Features.\n\nDie hochwertige Verarbeitung garantiert langlebige Zuverlässigkeit für den täglichen Einsatz.",
-        BlockType.KeyValueGrid => "Premium Qualität | Erstklassige Materialien und Verarbeitung\nInnovatives Design | Moderne Optik trifft Funktionalität\nEinfache Bedienung | Intuitive Handhabung für jeden\nLanglebigkeit | Robust und zuverlässig",
-        BlockType.DataTable => "Material | Aluminium / Kunststoff\nAbmessungen | 250 × 150 × 80 mm\nGewicht | 450 g\nFarbe | Schwarz\nAnschlüsse | USB-C, HDMI",
-        BlockType.FeatureCards => "Typ A | Standard, Premium, Pro\nTyp B | Basic, Advanced",
-        BlockType.CheckList => "1× Hauptgerät\n1× USB-C Kabel\n1× Kurzanleitung\n1× Garantiekarte",
-        BlockType.FixedText => "**Hinweis:** Dies ist ein fester Textbaustein aus dem Layout.",
-        _ => ""
-    };
+    public static string  GetDefaultIcon(this BlockType t)      => Meta[t].Icon;
+    public static string  GetDefaultTitle(this BlockType t)     => Meta[t].DefaultTitle;
+    public static string  GetDisplayName(this BlockType t)      => Meta[t].DisplayName;
+    public static string  GetInputLabel(this BlockType t)       => Meta[t].InputLabel;
+    public static string  GetInputPlaceholder(this BlockType t) => Meta[t].InputPlaceholder;
+    public static string? GetInputHint(this BlockType t)        => Meta[t].InputHint;
+    public static int     GetTextareaRows(this BlockType t)     => Meta[t].TextareaRows;
+    public static string  GetDemoContent(this BlockType t)      => Meta[t].DemoContent;
 }
