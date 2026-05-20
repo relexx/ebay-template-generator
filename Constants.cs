@@ -35,11 +35,12 @@ public static class Constants
         public const int IdLength = 8;
     }
     
-    /// <summary>Verfügbare Icons für Blöcke</summary>
-    public static readonly string[] AvailableIcons = 
-    { 
-        "🖼️", "📝", "✦", "⚙", "🔧", "📦", "💡", "⭐", 
-        "🎯", "📊", "🔍", "⚡", "🛠️", "📐", "🎨", "📋" 
+    /// <summary>Icon names for block icon picker (Lucide icon set)</summary>
+    public static readonly string[] AvailableIcons =
+    {
+        "image", "fileText", "sparkles", "settings", "wrench",
+        "box", "lightbulb", "star", "target", "barChart",
+        "search", "zap", "hammer", "ruler", "palette", "pin",
     };
     
     /// <summary>Verfügbare Aufzählungszeichen</summary>

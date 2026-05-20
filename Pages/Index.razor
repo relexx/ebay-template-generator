@@ -158,120 +158,129 @@
                     }
                 </select>
                 <span class="toolbar-divider"></span>
-                <span class="layout-badge" title="Toolbar-Info">@currentLayout.Blocks.Count Blöcke</span>
+                <span class="layout-badge">@currentLayout.Blocks.Count Blöcke · @GetRelativeTime(currentLayout.ModifiedAt)</span>
+                <div style="margin-left:auto">
+                    @if (SelectedBlock is not null)
+                    {
+                        <button class="btn btn-danger btn-small" @onclick="DeleteBlock" title="Block löschen">
+                            <Icon Name="trash" Size="14" /> Block löschen
+                        </button>
+                    }
+                </div>
             </div>
 
             <div class="layout-editor">
                 <div class="layout-sidebar">
-                    <div class="sidebar-section">
-                        <label>Layout-Name</label>
-                        <input type="text" @bind="currentLayout.Name" @bind:after="SaveLayouts"
-                               disabled="@currentLayout.IsDefault" placeholder="Layout-Name" />
-                    </div>
+                    <Panel Title="Layout" Icon="layers">
+                        <Field Label="Name">
+                            <input type="text" @bind="currentLayout.Name" @bind:after="SaveLayouts"
+                                   disabled="@currentLayout.IsDefault" placeholder="Layout-Name" />
+                        </Field>
+                    </Panel>
 
-                    <div class="sidebar-section">
-                        <div class="section-header">
-                            <h3>Blöcke</h3>
-                            <button class="btn btn-small btn-accent" @onclick="() => showAddBlockDialog = true">
-                                <span class="icon">➕</span>
+                    <Panel Title="Blöcke" Icon="blocks" Badge="@currentLayout.Blocks.Count.ToString()">
+                        <Actions>
+                            <button class="btn btn-small btn-accent" @onclick="() => showAddBlockDialog = true" title="Block hinzufügen">
+                                <Icon Name="plus" Size="14" />
                             </button>
-                        </div>
-                        <div class="block-list" id="block-list">
-                            @foreach (var block in currentLayout.Blocks.OrderBy(b => b.Order))
-                            {
-                                <div @key="block.Id"
-                                     class="block-item @(selectedBlockId == block.Id ? "selected" : "")"
-                                     data-id="@block.Id"
-                                     @onclick="() => SelectBlock(block)">
-                                    <span class="drag-handle">☰</span>
-                                    <span class="block-icon">@block.Icon</span>
-                                    <span class="block-title">@block.Title</span>
-                                    <span class="block-type">@block.Type.GetDisplayName()</span>
-                                </div>
-                            }
-                        </div>
-                    </div>
+                        </Actions>
+                        <ChildContent>
+                            <div class="block-list" id="block-list">
+                                @foreach (var block in currentLayout.Blocks.OrderBy(b => b.Order))
+                                {
+                                    <div @key="block.Id"
+                                         class="block-item @(selectedBlockId == block.Id ? "selected" : "")"
+                                         data-id="@block.Id"
+                                         @onclick="() => SelectBlock(block)">
+                                        <span class="drag-handle"><Icon Name="gripVert" Size="14" /></span>
+                                        <span class="block-icon">
+                                            @if (IconHelper.Has(block.Icon))
+                                            { <Icon Name="@block.Icon" Size="16" /> }
+                                            else
+                                            { <span>@block.Icon</span> }
+                                        </span>
+                                        <span class="block-title">@block.Title</span>
+                                        <span class="block-type">@block.Type.GetDisplayName()</span>
+                                    </div>
+                                }
+                            </div>
+                        </ChildContent>
+                    </Panel>
 
-                    <div class="sidebar-section">
-                        <h3>🎨 Farbschema</h3>
-                        <div class="color-row">
-                            <label>Primär</label>
-                            <input type="color" @bind="currentLayout.Colors.PrimaryColor" @bind:after="SaveLayouts" />
-                            <input type="text" class="color-text" @bind="currentLayout.Colors.PrimaryColor" @bind:after="SaveLayouts" />
-                        </div>
-                        <div class="color-row">
-                            <label>Akzent</label>
-                            <input type="color" @bind="currentLayout.Colors.AccentColor" @bind:after="SaveLayouts" />
-                            <input type="text" class="color-text" @bind="currentLayout.Colors.AccentColor" @bind:after="SaveLayouts" />
-                        </div>
-                        <div class="color-row">
-                            <label>Hintergrund</label>
-                            <input type="color" @bind="currentLayout.Colors.BackgroundColor" @bind:after="SaveLayouts" />
-                            <input type="text" class="color-text" @bind="currentLayout.Colors.BackgroundColor" @bind:after="SaveLayouts" />
-                        </div>
-                    </div>
+                    <Panel Title="Farbschema" Icon="palette">
+                        <Field Label="Primär">
+                            <div class="color-row">
+                                <input type="color" @bind="currentLayout.Colors.PrimaryColor" @bind:after="SaveLayouts" />
+                                <input type="text" class="color-text mono" @bind="currentLayout.Colors.PrimaryColor" @bind:after="SaveLayouts" />
+                            </div>
+                        </Field>
+                        <Field Label="Akzent">
+                            <div class="color-row">
+                                <input type="color" @bind="currentLayout.Colors.AccentColor" @bind:after="SaveLayouts" />
+                                <input type="text" class="color-text mono" @bind="currentLayout.Colors.AccentColor" @bind:after="SaveLayouts" />
+                            </div>
+                        </Field>
+                        <Field Label="Hintergrund">
+                            <div class="color-row">
+                                <input type="color" @bind="currentLayout.Colors.BackgroundColor" @bind:after="SaveLayouts" />
+                                <input type="text" class="color-text mono" @bind="currentLayout.Colors.BackgroundColor" @bind:after="SaveLayouts" />
+                            </div>
+                        </Field>
+                    </Panel>
                 </div>
 
-                <div class="block-editor">
+                <Panel Title="@(SelectedBlock is not null ? "Block bearbeiten" : "Block-Editor")"
+                       Icon="edit"
+                       Badge="@SelectedBlock?.Id">
+                    <ChildContent>
                     @if (SelectedBlock is not null)
                     {
-                        <h3>Block bearbeiten</h3>
-
-                        <div class="editor-group">
-                            <label>Id</label>
-                            <input type="text" value="@SelectedBlock.Id"
-                                   class="@(!string.IsNullOrEmpty(_blockIdError) ? "input-error" : string.Empty)"
+                        <Field Label="Id" Hint="Eindeutiger Bezeichner für JSON-Export">
+                            <input type="text" value="@SelectedBlock.Id" class="mono @(!string.IsNullOrEmpty(_blockIdError) ? "input-error" : string.Empty)"
                                    @onchange="async e => await ChangeBlockId(SelectedBlock, e.Value?.ToString() ?? string.Empty)"
                                    placeholder="block-id" />
                             @if (!string.IsNullOrEmpty(_blockIdError))
                             {
                                 <span class="field-error">@_blockIdError</span>
                             }
-                            <small class="hint">Eindeutiger Bezeichner, wird für JSON-Export verwendet.</small>
-                        </div>
+                        </Field>
 
-                        <div class="editor-group">
-                            <label>Block-Typ</label>
+                        <Field Label="Block-Typ">
                             <select @bind="SelectedBlock.Type" @bind:after="OnBlockTypeChanged">
                                 @foreach (BlockType t in Enum.GetValues<BlockType>())
                                 {
                                     <option value="@t">@t.GetDisplayName()</option>
                                 }
                             </select>
-                        </div>
+                        </Field>
 
-                        <div class="editor-group">
-                            <label>Icon</label>
+                        <Field Label="Icon">
                             <div class="icon-picker">
-                                @foreach (var icon in Constants.AvailableIcons)
+                                @foreach (var iconName in Constants.AvailableIcons)
                                 {
-                                    <button type="button" class="icon-btn @(SelectedBlock.Icon == icon ? "selected" : "")"
-                                            @onclick="() => SetBlockIcon(icon)">@icon</button>
+                                    <button type="button" class="icon-tile @(SelectedBlock.Icon == iconName ? "is-active" : "")"
+                                            @onclick="() => SetBlockIcon(iconName)" title="@iconName">
+                                        <Icon Name="@iconName" Size="18" StrokeWidth="1.6" />
+                                    </button>
                                 }
                             </div>
-                        </div>
+                        </Field>
 
-                        <div class="editor-group">
-                            <label>Überschrift</label>
+                        <Field Label="Überschrift">
                             <input type="text" @bind="SelectedBlock.Title" @bind:after="SaveLayouts" />
-                        </div>
+                        </Field>
 
                         @RenderBlockOptions(SelectedBlock)
-
-                        <div class="editor-actions">
-                            <button class="btn btn-danger" @onclick="DeleteBlock">
-                                <span class="icon">🗑️</span> Block löschen
-                            </button>
-                        </div>
                     }
                     else
                     {
                         <div class="no-selection">
                             <p>Wähle einen Block aus der Liste.</p>
-                            <p>Ziehe Blöcke per Drag & Drop, um die Reihenfolge zu ändern.</p>
+                            <p>Blöcke per Drag & Drop neu anordnen.</p>
                         </div>
                     }
-                </div>
+                    </ChildContent>
+                </Panel>
             </div>
 
             <div class="stage-foot">
@@ -285,48 +294,57 @@
 
     private RenderFragment RenderBlockOptions(BlockDefinition block) => __builder =>
     {
-        <div class="editor-group checkbox-group">
-            <label>
-                <input type="checkbox" @bind="block.Options.ShowTitle" @bind:after="SaveLayouts" />
-                Überschrift im Artikel anzeigen
-            </label>
-        </div>
+        <Field>
+            <ChildContent>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" @bind="block.Options.ShowTitle" @bind:after="SaveLayouts" />
+                        Überschrift im Artikel anzeigen
+                    </label>
+                </div>
+            </ChildContent>
+        </Field>
 
         @if (block.Type == BlockType.KeyValueGrid)
         {
-            <div class="editor-group">
-                <label>Spalten</label>
+            <Field Label="Spalten">
                 <select @bind="block.Options.Columns" @bind:after="SaveLayouts">
                     <option value="1">1 Spalte</option>
                     <option value="2">2 Spalten</option>
                     <option value="3">3 Spalten</option>
                 </select>
-            </div>
+            </Field>
             @RenderBulletPicker(block)
         }
 
         @if (block.Type == BlockType.DataTable)
         {
-            <div class="editor-group">
-                <label>Spalte 1</label>
+            <Field Label="Spalte 1">
                 <input type="text" @bind="block.Options.Column1Header" @bind:after="SaveLayouts" />
-            </div>
-            <div class="editor-group">
-                <label>Spalte 2</label>
+            </Field>
+            <Field Label="Spalte 2">
                 <input type="text" @bind="block.Options.Column2Header" @bind:after="SaveLayouts" />
-            </div>
-            <div class="editor-group checkbox-group">
-                <label>
-                    <input type="checkbox" @bind="block.Options.ShowColumnHeaders" @bind:after="SaveLayouts" />
-                    Spaltenüberschriften
-                </label>
-            </div>
-            <div class="editor-group checkbox-group">
-                <label>
-                    <input type="checkbox" @bind="block.Options.AlternatingBackground" @bind:after="SaveLayouts" />
-                    Zebra-Streifen
-                </label>
-            </div>
+            </Field>
+            <Field>
+                <ChildContent>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" @bind="block.Options.ShowColumnHeaders" @bind:after="SaveLayouts" />
+                            Spaltenüberschriften
+                        </label>
+                    </div>
+                </ChildContent>
+            </Field>
+            <Field>
+                <ChildContent>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" @bind="block.Options.AlternatingBackground" @bind:after="SaveLayouts" />
+                            Zebra-Streifen
+                        </label>
+                    </div>
+                </ChildContent>
+            </Field>
         }
 
         @if (block.Type == BlockType.CheckList)
@@ -336,35 +354,30 @@
 
         @if (block.Type == BlockType.Image)
         {
-            <div class="editor-group">
-                <label>Ausrichtung</label>
+            <Field Label="Ausrichtung">
                 <select @bind="block.Options.Alignment" @bind:after="SaveLayouts">
                     <option value="left">Links</option>
                     <option value="center">Zentriert</option>
                     <option value="right">Rechts</option>
                 </select>
-            </div>
-            <div class="editor-group">
-                <label>Max. Breite (px)</label>
+            </Field>
+            <Field Label="Max. Breite (px)">
                 <input type="number" @bind="block.Options.MaxWidth" @bind:after="SaveLayouts" min="100" max="800" />
-            </div>
+            </Field>
         }
 
         @if (block.Type == BlockType.FixedText)
         {
-            <div class="editor-group">
-                <label>Vorlagen-Text (Markdown)</label>
+            <Field Label="Vorlagen-Text (Markdown)" Hint="Standardwert für neue Artikel">
                 <textarea rows="6" @bind="block.Options.FixedContent" @bind:after="() => OnFixedContentChanged(block)"
                           placeholder="Fester Text, der im Layout gespeichert wird..."></textarea>
-                <small class="hint">Dieser Text wird als Standardwert für neue Artikel verwendet.</small>
-            </div>
+            </Field>
         }
     };
 
     private RenderFragment RenderBulletPicker(BlockDefinition block) => __builder =>
     {
-        <div class="editor-group">
-            <label>Aufzählungszeichen</label>
+        <Field Label="Aufzählungszeichen">
             <div class="bullet-picker">
                 @foreach (var b in Constants.AvailableBullets)
                 {
@@ -372,7 +385,7 @@
                             @onclick="() => SetBullet(b)">@b</button>
                 }
             </div>
-        </div>
+        </Field>
     };
 
     private RenderFragment RenderInputPhase() => __builder =>

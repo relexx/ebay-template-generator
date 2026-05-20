@@ -130,14 +130,14 @@ public static class BlockTypeExtensions
 {
     public static string GetDefaultIcon(this BlockType type) => type switch
     {
-        BlockType.Image => "🖼️",
-        BlockType.RichText => "📝",
-        BlockType.KeyValueGrid => "✦",
-        BlockType.DataTable => "⚙",
-        BlockType.FeatureCards => "🔧",
-        BlockType.CheckList => "📦",
-        BlockType.FixedText => "📌",
-        _ => "📄"
+        BlockType.Image => "image",
+        BlockType.RichText => "fileText",
+        BlockType.KeyValueGrid => "sparkles",
+        BlockType.DataTable => "barChart",
+        BlockType.FeatureCards => "target",
+        BlockType.CheckList => "box",
+        BlockType.FixedText => "pin",
+        _ => "blocks"
     };
     
     public static string GetDefaultTitle(this BlockType type) => type switch

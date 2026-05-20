@@ -621,6 +621,15 @@ public partial class Index
         ? 0
         : article.Footer.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length;
 
+    private static string GetRelativeTime(DateTime dt)
+    {
+        var diff = DateTime.UtcNow - dt;
+        if (diff.TotalSeconds < 60) return "gerade eben";
+        if (diff.TotalMinutes < 60) return $"vor {(int)diff.TotalMinutes} Min.";
+        if (diff.TotalHours < 24)   return $"vor {(int)diff.TotalHours} Std.";
+        return $"vor {(int)diff.TotalDays} Tagen";
+    }
+
     private static int GetTextareaRows(BlockType type) => type switch
     {
         BlockType.RichText => 6,
