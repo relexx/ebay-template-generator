@@ -194,6 +194,12 @@ public partial class Index
             if (!layouts.Exists(l => l.IsDefault))
                 layouts.Insert(0, LayoutTemplate.CreateStandard());
 
+            // Migrate legacy emoji block icons to Lucide names
+            foreach (var layout in layouts)
+                foreach (var block in layout.Blocks)
+                    if (!IconHelper.Has(block.Icon))
+                        block.Icon = block.Type.GetDefaultIcon();
+
             currentLayout = layouts.Find(l => l.Id == selectedLayoutId) ?? layouts[0];
             selectedLayoutId = currentLayout.Id;
         }

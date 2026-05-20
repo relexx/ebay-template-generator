@@ -142,11 +142,6 @@
                         </button>
                         <InputFile id="layout-import" OnChange="ImportLayout" accept=".json" style="display:none" />
                     </div>
-                    <button class="btn btn-danger btn-small" @onclick="DeleteLayout"
-                            disabled="@(currentLayout.IsDefault || layouts.Count <= 1)"
-                            title="Layout löschen">
-                        <Icon Name="trash" Size="14" />
-                    </button>
                 </div>
             </div>
 
@@ -157,15 +152,13 @@
                         <option value="@l.Id">@l.Name @(l.IsDefault ? "(Standard)" : "")</option>
                     }
                 </select>
-                <span class="toolbar-divider"></span>
-                <span class="layout-badge">@currentLayout.Blocks.Count Blöcke · @GetRelativeTime(currentLayout.ModifiedAt)</span>
+                <span class="toolbar-meta">@currentLayout.Blocks.Count Blöcke · @GetRelativeTime(currentLayout.ModifiedAt)</span>
                 <div style="margin-left:auto">
-                    @if (SelectedBlock is not null)
-                    {
-                        <button class="btn btn-danger btn-small" @onclick="DeleteBlock" title="Block löschen">
-                            <Icon Name="trash" Size="14" /> Block löschen
-                        </button>
-                    }
+                    <button class="btn btn-danger btn-small" @onclick="DeleteLayout"
+                            disabled="@(currentLayout.IsDefault || layouts.Count <= 1)"
+                            title="Layout löschen">
+                        <Icon Name="trash" Size="14" />
+                    </button>
                 </div>
             </div>
 
@@ -232,6 +225,14 @@
                 <Panel Title="@(SelectedBlock is not null ? "Block bearbeiten" : "Block-Editor")"
                        Icon="edit"
                        Badge="@SelectedBlock?.Id">
+                    <Actions>
+                        @if (SelectedBlock is not null)
+                        {
+                            <button class="btn btn-danger btn-small" @onclick="DeleteBlock" title="Block löschen">
+                                <Icon Name="trash" Size="14" />
+                            </button>
+                        }
+                    </Actions>
                     <ChildContent>
                     @if (SelectedBlock is not null)
                     {
@@ -527,11 +528,11 @@
                 </div>
                 <div class="page-head-actions">
                     <div class="btn-stack">
-                        <button class="settings-toggle-btn @(_previewDevice == "desktop" ? "active" : "")"
+                        <button class="btn btn-secondary @(_previewDevice == "desktop" ? "active" : "")"
                                 @onclick='() => _previewDevice = "desktop"' title="Desktop-Ansicht">
                             <Icon Name="monitor" Size="14" /> Desktop
                         </button>
-                        <button class="settings-toggle-btn @(_previewDevice == "mobile" ? "active" : "")"
+                        <button class="btn btn-secondary @(_previewDevice == "mobile" ? "active" : "")"
                                 @onclick='() => _previewDevice = "mobile"' title="Mobile-Ansicht">
                             <Icon Name="smartphone" Size="14" /> Mobile
                         </button>

@@ -73,12 +73,12 @@ public class LayoutTemplate
         },
         Blocks = new List<BlockDefinition>
         {
-            new() { Id = "img", Type = BlockType.Image, Icon = "🖼️", Title = "Produktbild", Order = 0, Options = new() { Alignment = "center", MaxWidth = 600 } },
-            new() { Id = "desc", Type = BlockType.RichText, Icon = "📝", Title = "Beschreibung", Order = 1 },
-            new() { Id = "highlights", Type = BlockType.KeyValueGrid, Icon = "✦", Title = "Highlights", Order = 2, Options = new() { BulletChar = "▸", Columns = 2 } },
-            new() { Id = "specs", Type = BlockType.DataTable, Icon = "⚙", Title = "Technische Daten", Order = 3, Options = new() { Column1Header = "Spezifikation", Column2Header = "Wert", ShowColumnHeaders = true, AlternatingBackground = true } },
-            new() { Id = "compat", Type = BlockType.FeatureCards, Icon = "🔧", Title = "Kompatibilität", Order = 4 },
-            new() { Id = "scope", Type = BlockType.CheckList, Icon = "📦", Title = "Lieferumfang", Order = 5, Options = new() { BulletChar = "✓" } }
+            new() { Id = "img", Type = BlockType.Image, Icon = "image", Title = "Produktbild", Order = 0, Options = new() { Alignment = "center", MaxWidth = 600 } },
+            new() { Id = "desc", Type = BlockType.RichText, Icon = "fileText", Title = "Beschreibung", Order = 1 },
+            new() { Id = "highlights", Type = BlockType.KeyValueGrid, Icon = "sparkles", Title = "Highlights", Order = 2, Options = new() { BulletChar = "▸", Columns = 2 } },
+            new() { Id = "specs", Type = BlockType.DataTable, Icon = "barChart", Title = "Technische Daten", Order = 3, Options = new() { Column1Header = "Spezifikation", Column2Header = "Wert", ShowColumnHeaders = true, AlternatingBackground = true } },
+            new() { Id = "compat", Type = BlockType.FeatureCards, Icon = "target", Title = "Kompatibilität", Order = 4 },
+            new() { Id = "scope", Type = BlockType.CheckList, Icon = "box", Title = "Lieferumfang", Order = 5, Options = new() { BulletChar = "✓" } }
         }
     };
 }
