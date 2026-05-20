@@ -25,6 +25,17 @@
                 }
             }
         </div>
+
+        <div class="phase-indicator-mobile">
+            <button class="phase-nav-btn" @onclick="async () => { if (currentPhase > 0) await GoToPhase(currentPhase - 1); }"
+                    disabled="@(currentPhase == 0)">&#8249;</button>
+            <div class="phase-mobile-current">
+                <span class="phase-mobile-num">@currentPhase</span>
+                <span class="phase-mobile-label">@GetPhaseName(currentPhase)</span>
+            </div>
+            <button class="phase-nav-btn" @onclick="async () => { if (currentPhase < 3) await GoToPhase(currentPhase + 1); }"
+                    disabled="@(currentPhase == 3)">&#8250;</button>
+        </div>
     </header>
 
     <main class="app-main">

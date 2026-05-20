@@ -142,6 +142,68 @@ body {
     gap: 0;
 }
 
+.phase-indicator-mobile {
+    display: none;
+    align-items: center;
+    gap: 4px;
+}
+
+.phase-nav-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: var(--transition);
+    padding: 0;
+    line-height: 1;
+}
+
+.phase-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.phase-nav-btn:not(:disabled):hover {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.phase-mobile-current {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: var(--color-primary);
+    border-radius: var(--radius-sm);
+    min-width: 130px;
+    justify-content: center;
+}
+
+.phase-mobile-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.phase-mobile-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
 .phase {
     display: flex;
     align-items: center;
@@ -932,28 +994,34 @@ textarea {
     .layout-editor {
         grid-template-columns: 1fr;
     }
-    
+
     .form-grid {
         grid-template-columns: 1fr;
     }
-    
-    .phase-label {
-        display: none;
-    }
-    
+
     .app-header {
         padding: 10px 16px;
     }
-    
+
     .app-header h1 {
         font-size: 1rem;
     }
-    
+
     .app-main {
         padding: 16px;
     }
-    
+
     .block-type-list {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .phase-indicator {
+        display: none;
+    }
+
+    .phase-indicator-mobile {
+        display: flex;
     }
 }
