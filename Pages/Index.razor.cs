@@ -31,6 +31,8 @@ public partial class Index
     private bool _showLayoutMore;
     private bool _showInputMore;
 
+    private string _blockIdError = string.Empty;
+
     private string notification = string.Empty;
     private bool notificationSuccess;
     private CancellationTokenSource? notificationCts;
@@ -194,7 +196,46 @@ public partial class Index
     }
 
     // ═══════════════ BLOCK MANAGEMENT ═══════════════
-    private void SelectBlock(BlockDefinition block) => selectedBlockId = block.Id;
+    private void SelectBlock(BlockDefinition block)
+    {
+        selectedBlockId = block.Id;
+        _blockIdError = string.Empty;
+    }
+
+    private async Task ChangeBlockId(BlockDefinition block, string newId)
+    {
+        newId = newId.Trim();
+
+        if (string.IsNullOrEmpty(newId))
+        {
+            _blockIdError = "Id darf nicht leer sein.";
+            return;
+        }
+        if (!System.Text.RegularExpressions.Regex.IsMatch(newId, @"^[a-zA-Z0-9_\-]+$"))
+        {
+            _blockIdError = "Nur Buchstaben, Ziffern, _ und - erlaubt.";
+            return;
+        }
+        if (newId != block.Id && currentLayout.Blocks.Any(b => b.Id == newId))
+        {
+            _blockIdError = $"Id '{newId}' ist bereits vergeben.";
+            return;
+        }
+
+        _blockIdError = string.Empty;
+        var oldId = block.Id;
+
+        if (article.BlockContents.TryGetValue(oldId, out var content))
+        {
+            article.BlockContents.Remove(oldId);
+            article.BlockContents[newId] = content;
+        }
+
+        block.Id = newId;
+        selectedBlockId = newId;
+        await SaveLayouts();
+        await SaveArticle();
+    }
 
     private async Task AddBlock(BlockType type)
     {

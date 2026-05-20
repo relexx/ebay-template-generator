@@ -167,6 +167,19 @@
                         <h3>Block bearbeiten</h3>
 
                         <div class="editor-group">
+                            <label>Id</label>
+                            <input type="text" value="@SelectedBlock.Id"
+                                   class="@(!string.IsNullOrEmpty(_blockIdError) ? "input-error" : string.Empty)"
+                                   @onchange="async e => await ChangeBlockId(SelectedBlock, e.Value?.ToString() ?? string.Empty)"
+                                   placeholder="block-id" />
+                            @if (!string.IsNullOrEmpty(_blockIdError))
+                            {
+                                <span class="field-error">@_blockIdError</span>
+                            }
+                            <small class="hint">Eindeutiger Bezeichner, wird für JSON-Export verwendet.</small>
+                        </div>
+
+                        <div class="editor-group">
                             <label>Block-Typ</label>
                             <select @bind="SelectedBlock.Type" @bind:after="OnBlockTypeChanged">
                                 @foreach (BlockType t in Enum.GetValues<BlockType>())

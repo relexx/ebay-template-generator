@@ -668,6 +668,24 @@ input[type="color"] {
     font-size: 0.95rem;
 }
 
+.editor-group input.input-error {
+    border-color: var(--color-error);
+}
+
+.field-error {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--color-error);
+    margin-top: 4px;
+}
+
+.hint {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--color-text-dim);
+    margin-top: 4px;
+}
+
 .editor-group select {
     cursor: pointer;
 }
