@@ -71,6 +71,7 @@ public class BlockDefinition
 public class BlockOptions
 {
     // === Gemeinsame Optionen ===
+    public bool ShowTitle { get; set; } = true;
     public string BulletChar { get; set; } = "✓";
     public bool AlternatingBackground { get; set; } = true;
     
@@ -91,6 +92,7 @@ public class BlockOptions
     
     public BlockOptions Clone() => new()
     {
+        ShowTitle = ShowTitle,
         BulletChar = BulletChar,
         AlternatingBackground = AlternatingBackground,
         Column1Header = Column1Header,

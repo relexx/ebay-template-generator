@@ -111,11 +111,16 @@ public class TemplateGeneratorService
     {
         var alignment = block.Options.Alignment;
         var maxWidth = block.Options.MaxWidth;
+        var titleHtml = block.Options.ShowTitle ? $@"
+        <div style=""margin: 0 0 12px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
+          {block.Icon} {Encode(block.Title)}
+        </div>" : "";
 
         return $@"  <!-- {block.Title} -->
   <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
     <tr>
       <td style=""padding: 20px; text-align: {alignment};"">
+        {titleHtml}
         <img src=""{Encode(content)}"" alt=""Produktbild"" style=""max-width: 100%; width: {maxWidth}px; height: auto; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"">
       </td>
     </tr>
@@ -128,11 +133,16 @@ public class TemplateGeneratorService
         var html = Markdown.ToHtml(content, _pipeline);
         html = html.Replace("<p>", "<p style=\"margin: 0 0 15px 0; font-size: 15px; color: #333;\">");
         html = html.Replace("<strong>", $"<strong style=\"color: {colors.PrimaryColor};\">");
+        var titleHtml = block.Options.ShowTitle ? $@"
+        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
+          {block.Icon} {Encode(block.Title)}
+        </div>" : "";
 
         return $@"  <!-- {block.Title} -->
   <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
     <tr>
       <td style=""padding: 25px 30px;"">
+        {titleHtml}
         {html}
       </td>
     </tr>
@@ -147,14 +157,17 @@ public class TemplateGeneratorService
         var columns = Math.Max(1, Math.Min(3, block.Options.Columns));
         var widthPercent = 100 / columns;
 
+        var titleHtmlKvg = block.Options.ShowTitle ? $@"
+        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
+          {block.Icon} {Encode(block.Title)}
+        </div>" : "";
+
         var sb = new StringBuilder();
         sb.AppendLine($@"  <!-- {block.Title} -->
   <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
     <tr>
       <td style=""padding: 25px 30px;"">
-        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
-          {block.Icon} {Encode(block.Title)}
-        </div>
+        {titleHtmlKvg}
         <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">");
 
         for (int i = 0; i < lines.Length; i++)
@@ -200,14 +213,17 @@ public class TemplateGeneratorService
         var showHeaders = block.Options.ShowColumnHeaders;
         var zebra = block.Options.AlternatingBackground;
 
+        var titleHtmlDt = block.Options.ShowTitle ? $@"
+        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
+          {block.Icon} {Encode(block.Title)}
+        </div>" : "";
+
         var sb = new StringBuilder();
         sb.AppendLine($@"  <!-- {block.Title} -->
   <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
     <tr>
       <td style=""padding: 25px 30px;"">
-        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
-          {block.Icon} {Encode(block.Title)}
-        </div>
+        {titleHtmlDt}
         <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: #fff; border-radius: 6px; overflow: hidden; border: 1px solid #e0e0e0;"">");
 
         if (showHeaders)
@@ -253,14 +269,17 @@ public class TemplateGeneratorService
             ("linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)", "#ffffff")
         };
 
+        var titleHtmlFc = block.Options.ShowTitle ? $@"
+        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
+          {block.Icon} {Encode(block.Title)}
+        </div>" : "";
+
         var sb = new StringBuilder();
         sb.AppendLine($@"  <!-- {block.Title} -->
   <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
     <tr>
       <td style=""padding: 25px 30px;"">
-        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
-          {block.Icon} {Encode(block.Title)}
-        </div>
+        {titleHtmlFc}
         <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">
           <tr>");
 
@@ -297,14 +316,17 @@ public class TemplateGeneratorService
         var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var bullet = block.Options.BulletChar;
 
+        var titleHtmlCl = block.Options.ShowTitle ? $@"
+        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
+          {block.Icon} {Encode(block.Title)}
+        </div>" : "";
+
         var sb = new StringBuilder();
         sb.AppendLine($@"  <!-- {block.Title} -->
   <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
     <tr>
       <td style=""padding: 25px 30px;"">
-        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
-          {block.Icon} {Encode(block.Title)}
-        </div>
+        {titleHtmlCl}
         <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">");
 
         foreach (var line in lines)
@@ -333,11 +355,16 @@ public class TemplateGeneratorService
         var html = Markdown.ToHtml(content, _pipeline);
         html = html.Replace("<p>", "<p style=\"margin: 0 0 15px 0; font-size: 15px; color: #333;\">");
         html = html.Replace("<strong>", $"<strong style=\"color: {colors.PrimaryColor};\">");
+        var titleHtml = block.Options.ShowTitle ? $@"
+        <div style=""margin: 0 0 20px 0; font-size: 18px; color: #1a1a1a; border-bottom: 3px solid {colors.AccentColor}; padding-bottom: 10px; display: inline-block; font-weight: 600;"">
+          {block.Icon} {Encode(block.Title)}
+        </div>" : "";
 
         return $@"  <!-- {block.Title} (Fester Text) -->
   <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
     <tr>
       <td style=""padding: 25px 30px;"">
+        {titleHtml}
         {html}
       </td>
     </tr>
