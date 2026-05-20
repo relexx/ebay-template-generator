@@ -7,9 +7,9 @@ Gesammelte Ideen aus Brainstorming-Sessions. Keine Priorisierung, kein Versprech
 ## Animationen
 
 - **Phasenwechsel** — Slide-left/right zwischen den Phasen (CSS `translate` + `opacity`, je nach Navigationsrichtung)
-- **Block hinzufügen/entfernen** — `slide-down` + `fade-in` beim Einfügen, `slide-up` + `fade-out` beim Löschen
-- **Modal öffnen** — `scale(0.95) → scale(1)` + `opacity` statt sofortigem Erscheinen
-- **Notification** — Slide-in von unten rechts, automatisches Slide-out nach Timeout
+- ✅ **Block hinzufügen/entfernen** — `slide-down` + `fade-in` beim Einfügen, `slide-up` + `fade-out` beim Löschen
+- ✅ **Modal öffnen** — `scale(0.95) → scale(1)` + `opacity` statt sofortigem Erscheinen
+- ✅ **Notification** — Slide-in von unten rechts, automatisches Slide-out nach Timeout
 - **Step-Connector** — Breite animiert von 0 → 100 % beim Abschließen einer Phase
 - **Drag & Drop** — Drop-Zone pulsiert beim Hovern über gültiger Zielposition
 - **Farbwähler-Swatch** — Kurzer `pop`-Effekt beim Aktivieren
@@ -58,7 +58,9 @@ Gesammelte Ideen aus Brainstorming-Sessions. Keine Priorisierung, kein Versprech
 
 ## Icons (Lucide-Erweiterung)
 
-Aktuell fehlen sinnvolle Domain-Icons für eBay-Listings. Vorschläge für Erweiterung von `Constants.AvailableIcons`:
+> ✅ Umgesetzt: Kategorisierter Icon-Picker mit 6 Gruppen in `Constants.IconCategories` (Stand 2026-05-21)
+
+Ursprüngliche Vorschläge, die in `Constants.AvailableIcons` aufgenommen wurden:
 
 **Versand & Logistik**
 `truck` · `package2` · `mapPin` · `clock` · `calendar`
@@ -67,7 +69,7 @@ Aktuell fehlen sinnvolle Domain-Icons für eBay-Listings. Vorschläge für Erwei
 `shield` · `award` · `star` · `zap` · `checkCircle`
 
 **Technik & Produkt**
-`cpu` · `wifi` · `battery` · `camera` · `headphones` · `monitor` · `printer` · `wrench` · `scissors` · `tool` · `ruler` · `weight`
+`cpu` · `wifi` · `battery` · `camera` · `headphones` · `monitor` · `printer` · `wrench` · `scissors` · `toolbox` · `hammer` · `ruler` · `weight`
 
 **Kommunikation**
 `globe` · `phone` · `mail` · `link`
@@ -78,7 +80,7 @@ Aktuell fehlen sinnvolle Domain-Icons für eBay-Listings. Vorschläge für Erwei
 **Weitere UI**
 `alertTriangle` · `info` · `eye` · `eyeOff` · `xCircle`
 
-Zusätzlich: **Kategorisierung im Icon-Picker** (Abschnitte statt flacher Liste).
+✅ **Kategorisierung im Icon-Picker** ist bereits implementiert (Abschnitte statt flacher Liste).
 
 ---
 

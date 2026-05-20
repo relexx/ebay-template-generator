@@ -48,7 +48,9 @@ Eigene C#-Methode `SyntaxHighlightHtml(string html)` in `TemplateGeneratorServic
 
 ## Meilensteine
 
-### M1 — Design-System-Fundament
+> **Status: Alle Meilensteine abgeschlossen** (Stand 2026-05-21)
+
+### M1 — Design-System-Fundament ✓
 *Alle nachfolgenden Milestones hängen davon ab.*
 
 **Scope:**
@@ -65,7 +67,7 @@ Eigene C#-Methode `SyntaxHighlightHtml(string html)` in `TemplateGeneratorServic
 
 ---
 
-### M2 — App-Shell
+### M2 — App-Shell ✓
 *Benötigt: M1*
 
 **Scope:**
@@ -84,7 +86,7 @@ Eigene C#-Methode `SyntaxHighlightHtml(string html)` in `TemplateGeneratorServic
 
 ---
 
-### M3 — Panel & Field Komponenten
+### M3 — Panel & Field Komponenten ✓
 *Benötigt: M1*
 
 **Scope:**
@@ -99,7 +101,7 @@ Eigene C#-Methode `SyntaxHighlightHtml(string html)` in `TemplateGeneratorServic
 
 ---
 
-### M4 — Stage-Rahmen: page-head + btn-stack
+### M4 — Stage-Rahmen: page-head + btn-stack ✓
 *Benötigt: M1, M2, M3*
 
 **Scope:**
@@ -116,7 +118,7 @@ Eigene C#-Methode `SyntaxHighlightHtml(string html)` in `TemplateGeneratorServic
 
 ---
 
-### M5 — Layout-Phase verfeinern
+### M5 — Layout-Phase verfeinern ✓
 *Benötigt: M4*
 
 **Scope:**
@@ -131,7 +133,7 @@ Eigene C#-Methode `SyntaxHighlightHtml(string html)` in `TemplateGeneratorServic
 
 ---
 
-### M6 — Eingabe-Phase verfeinern
+### M6 — Eingabe-Phase verfeinern ✓
 *Benötigt: M4*
 
 **Scope:**
@@ -146,7 +148,7 @@ Eigene C#-Methode `SyntaxHighlightHtml(string html)` in `TemplateGeneratorServic
 
 ---
 
-### M7 — Vorschau-Phase
+### M7 — Vorschau-Phase ✓
 *Benötigt: M4*
 
 **Scope:**
@@ -161,7 +163,7 @@ Eigene C#-Methode `SyntaxHighlightHtml(string html)` in `TemplateGeneratorServic
 
 ---
 
-### M8 — HTML-Phase
+### M8 — HTML-Phase ✓
 *Benötigt: M4*
 
 **Scope:**
@@ -176,7 +178,7 @@ Eigene C#-Methode `SyntaxHighlightHtml(string html)` in `TemplateGeneratorServic
 
 ---
 
-### M9 — Generiertes eBay-HTML
+### M9 — Generiertes eBay-HTML ✓
 *Benötigt: M1 (IconHelper für SVG-Pfade)*
 
 **Scope:**

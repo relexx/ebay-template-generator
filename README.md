@@ -39,7 +39,7 @@ Phasen werden im Stepper als erledigt (`✓`) markiert; vorwärts ist nur nach A
 
 - **Drag & Drop**: Blöcke per SortableJS frei anordnen
 - **Block-ID**: Eindeutiger Kurzname je Block, sichtbar als Badge im Editor; doppelte IDs werden abgefangen
-- **Icon-Picker**: Jedem Block ein Lucide-Icon zuweisen (16 Symbole)
+- **Icon-Picker**: Jedem Block ein Lucide-Icon aus 6 kategorisierten Gruppen (Versand, Qualität, Technik, Kommunikation, Allgemein, UI) zuweisen
 - **Demo-Daten**: Ein Klick füllt alle Felder des aktiven Layouts mit Beispielinhalten
 
 ---
@@ -48,6 +48,7 @@ Phasen werden im Stepper als erledigt (`✓`) markiert; vorwärts ist nur nach A
 
 - **Standard-Layout**: Vorkonfiguriertes Template mit 6 typischen eBay-Blöcken
 - **Eigene Layouts**: Erstellen, umbenennen, duplizieren, löschen
+- **Sicherheitsabfragen**: Alle destruktiven Aktionen (Block löschen, Layout löschen, Artikel zurücksetzen) erfordern eine Bestätigung im Confirm-Dialog
 - **Import / Export**: Layouts als JSON sichern und wiederherstellen
 - **Farbschema**: Primär-, Akzent- und Hintergrundfarbe frei wählbar
 - **Portabilität**: Das komplette Layout wird beim Artikel-Export eingebettet; beim Import mit unterschiedlichem Layout erscheint ein Konfliktdialog (Layout übernehmen oder Daten einpassen)
@@ -101,12 +102,14 @@ Phasen werden im Stepper als erledigt (`✓`) markiert; vorwärts ist nur nach A
 - **Geist-Schriften**: Geist (Fließtext) und Geist Mono (Code, URLs) von Google Fonts
 - **Lucide SVG-Icons**: Vektorgrafik-Icons als `<svg>`-Strings, inline gerendert – kein Webfont-Ladeoverhead
 - **Panel / Field-Komponenten**: Wiederverwendbare Blazor-Komponenten für konsistente Abschnitte mit Titel, Icon, Badge und Actions-Slot
+- **„Über die App"-Dialog**: Zeigt Versionsinformationen, Features und verwendete Bibliotheken; erscheint automatisch beim ersten Start und ist jederzeit über die Einstellungen abrufbar
+- **„Alle lokalen Daten entfernen"**: Löscht sämtliche gespeicherten Daten (Layouts, Artikel, Einstellungen) per `localStorage.clear()` mit Sicherheitsabfrage
 
 ---
 
 ### Persistenz & Datenformate
 
-- **LocalStorage**: Layouts, Artikeldaten und Einstellungen werden automatisch im Browser gespeichert
+- **LocalStorage**: Layouts, Artikeldaten und Einstellungen werden automatisch im Browser gespeichert (Keys: `relexx-layouts`, `relexx-article`, `relexx-settings`, `relexx-first-run`)
 - **Artikel-Import / Export**: Vollständige Artikeldaten inkl. Layout als JSON sichern
 - **Layout-Import / Export**: Layouts separat portieren
 - **JSON-Schema für KI-Tools**: Generiert ein beschriftetes Schema für ChatGPT, Claude & Co. zur automatischen Befüllung; enthält Hinweise zum Dateiformat für den Download
@@ -161,11 +164,13 @@ ebay-template-generator/
 │   └── Index.razor.cs              # Code-behind: State, JS-Interop, Phasen-Navigation
 │
 ├── Services/
+│   ├── LocalStorageService.cs      # ILocalStorageService + Implementierung (JS-Interop)
 │   └── TemplateGeneratorService.cs # HTML- und JSON-Schema-Generierung
 │
 ├── docs/
-│   ├── MOCKUP_FEATURES.md          # Mockup-Analyse und Feature-Entscheidungen
-│   └── REDESIGN_PLAN.md            # Meilenstein-Plan für das UI-Redesign
+│   ├── MOCKUP_FEATURES.md          # Mockup-Analyse und Feature-Entscheidungen (alle umgesetzt)
+│   ├── REDESIGN_PLAN.md            # Meilenstein-Plan für das UI-Redesign (alle Meilensteine abgeschlossen)
+│   └── IDEAS.md                    # Ideen-Backlog: neue Block-Typen, Animationen, weitere Features
 │
 └── wwwroot/
     ├── css/app.css                 # OKLCH-Theming, Komponenten-Styles, Syntax-Highlighting
@@ -184,7 +189,7 @@ ebay-template-generator/
 | Schriften    | Geist / Geist Mono (Google Fonts)   |
 | Icons        | Lucide SVG (inline, kein Webfont)   |
 | Markdown     | Markdig                             |
-| Storage      | Blazored.LocalStorage               |
+| Storage      | Custom `LocalStorageService` (JS-Interop) |
 | Drag & Drop  | SortableJS                          |
 | Hosting      | Azure Static Web Apps               |
 
@@ -237,8 +242,7 @@ MIT License – siehe [LICENSE](LICENSE.md) für Details.
 
 ## Danksagungen
 
-- [Markdig](https://github.com/xoofx/markdig) – Markdown-Parser
-- [Blazored.LocalStorage](https://github.com/Blazored/LocalStorage) – LocalStorage-Abstraktion
-- [SortableJS](https://sortablejs.github.io/Sortable/) – Drag & Drop Bibliothek
-- [Lucide](https://lucide.dev/) – SVG-Icon-Bibliothek
-- [Geist](https://vercel.com/font) – Schriftfamilie von Vercel
+- [Markdig](https://github.com/xoofx/markdig) – Markdown-Parser (BSD-2-Clause)
+- [SortableJS](https://sortablejs.github.io/Sortable/) – Drag & Drop Bibliothek (MIT)
+- [Lucide](https://lucide.dev/) – SVG-Icon-Bibliothek (ISC)
+- [Geist](https://vercel.com/font) – Schriftfamilie von Vercel (SIL OFL 1.1)
