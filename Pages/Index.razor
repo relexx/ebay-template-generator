@@ -67,6 +67,8 @@
                     <span class="icon">➕</span> Neu
                 </button>
 
+                <InputFile id="layout-import" OnChange="ImportLayout" accept=".json" style="display:none" />
+
                 <div class="toolbar-overflow-group">
                     <button class="btn btn-secondary toolbar-more-btn" @onclick="() => _showLayoutMore = !_showLayoutMore" title="Weitere Aktionen">
                         <span class="icon">•••</span>
@@ -78,7 +80,6 @@
                         <button class="btn btn-secondary" @onclick="async () => { _showLayoutMore = false; await ExportLayout(); }" title="Layout exportieren">
                             <span class="icon">📤</span> Export
                         </button>
-                        <InputFile id="layout-import" OnChange="ImportLayout" accept=".json" style="display:none" />
                         <button class="btn btn-secondary" title="Layout importieren"
                                 @onclick='async () => { _showLayoutMore = false; await JS.InvokeVoidAsync("triggerClick", "layout-import"); }'>
                             <span class="icon">📥</span> Import
@@ -335,6 +336,8 @@
                     <span class="icon">🗑️</span> Zurücksetzen
                 </button>
 
+                <InputFile id="article-import" OnChange="ImportArticle" accept=".json" style="display:none" />
+
                 <div class="toolbar-overflow-group">
                     <button class="btn btn-secondary toolbar-more-btn" @onclick="() => _showInputMore = !_showInputMore" title="Weitere Aktionen">
                         <span class="icon">•••</span>
@@ -346,7 +349,6 @@
                         <button class="btn btn-secondary" @onclick="async () => { _showInputMore = false; await ExportArticle(); }">
                             <span class="icon">📤</span> Export
                         </button>
-                        <InputFile id="article-import" OnChange="ImportArticle" accept=".json" style="display:none" />
                         <button class="btn btn-secondary"
                                 @onclick='async () => { _showInputMore = false; await JS.InvokeVoidAsync("triggerClick", "article-import"); }'>
                             <span class="icon">📥</span> Import

@@ -4,6 +4,7 @@
       "Bash(dotnet build:*)",
       "Bash(dotnet --version)",
       "Bash(dotnet list *)",
+      "Bash(git *)",
       "Bash(which dotnet *)",
       "Read(//usr/**)",
       "Read(//home/relexx/.dotnet/**)",

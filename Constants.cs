@@ -23,7 +23,6 @@ public static class Constants
     public static class Timing
     {
         public const int NotificationDurationMs = 3000;
-        public const int DomRenderDelayMs = 50;
     }
     
     /// <summary>Validierungsgrenzen</summary>

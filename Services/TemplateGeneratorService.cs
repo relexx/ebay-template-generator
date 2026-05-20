@@ -5,9 +5,6 @@ using Markdig;
 
 namespace EbayTemplateGenerator.Services;
 
-/// <summary>
-/// Generiert eBay-konformes HTML aus Artikeldaten und dynamischen Blöcken
-/// </summary>
 public class TemplateGeneratorService
 {
     private readonly MarkdownPipeline _pipeline;
@@ -19,16 +16,12 @@ public class TemplateGeneratorService
             .Build();
     }
 
-    /// <summary>
-    /// Generiert das komplette HTML aus Artikeldaten
-    /// </summary>
     public string GenerateHtml(ArticleData article)
     {
         var layout = article.Layout;
         var colors = layout.Colors;
         var sb = new StringBuilder();
         
-        // Header comment
         sb.AppendLine("<!-- eBay HTML-Template - Generiert mit relexx' Template Generator -->");
         sb.AppendLine($"<!-- Layout: {layout.Name} -->");
         sb.AppendLine();
