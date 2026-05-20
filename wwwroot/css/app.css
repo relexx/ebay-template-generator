@@ -573,6 +573,102 @@ body {
     color: var(--color-text-muted);
 }
 
+/* ========== Panel Component ========== */
+.panel {
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--pad-xs) var(--pad-sm);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-card);
+    gap: 12px;
+}
+
+.panel-head h2 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.panel-icon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-text-muted);
+}
+
+.panel-body {
+    padding: var(--pad-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-sm);
+}
+
+.panel-body.tight {
+    gap: 8px;
+    padding: var(--pad-xs);
+}
+
+/* ========== Field Component ========== */
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.field-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    font-weight: 500;
+}
+
+/* ========== Badge ========== */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 99px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: var(--color-bg-input);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+    white-space: nowrap;
+}
+
+.badge-accent {
+    background: var(--color-accent);
+    color: oklch(0.2 0 0);
+    border-color: transparent;
+}
+
+.badge-primary {
+    background: var(--color-primary);
+    color: white;
+    border-color: transparent;
+}
+
+/* Row utility */
+.row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
 /* ========== Layout Editor (Phase 0) ========== */
 .layout-phase {
     display: flex;

@@ -1,0 +1,19 @@
+<div class="field">
+    @if (Label is not null)
+    {
+        <div class="field-label">
+            <span>@Label</span>
+            @if (Hint is not null)
+            {
+                <span class="hint">@Hint</span>
+            }
+        </div>
+    }
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Hint { get; set; }
+    [Parameter, EditorRequired] public RenderFragment? ChildContent { get; set; }
+}
