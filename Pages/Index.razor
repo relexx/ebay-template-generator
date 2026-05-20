@@ -320,7 +320,7 @@
                     <div class="form-section">
                         <div class="section-header">
                             <h2>@block.Icon @block.Title</h2>
-                            <button class="btn-clear" @onclick="() => ClearBlock(block.Id)" title="Löschen">×</button>
+                            <button class="btn-clear" @onclick="() => ClearBlock(block.Id)" title="Inhalt löschen">🗑️</button>
                         </div>
                         <div class="form-group">
                             <label>@block.Type.GetInputLabel()</label>
@@ -355,7 +355,7 @@
                 <div class="form-section">
                     <div class="section-header">
                         <h2>🏷️ Fußzeile</h2>
-                        <button class="btn-clear" @onclick="() => article.Footer = string.Empty" title="Löschen">×</button>
+                        <button class="btn-clear" @onclick="() => article.Footer = string.Empty" title="Inhalt löschen">🗑️</button>
                     </div>
                     <div class="form-group">
                         <label>Pro Zeile ein Eintrag, max. @Constants.Limits.MaxFooterLines Zeilen (Format: Label: Wert)</label>

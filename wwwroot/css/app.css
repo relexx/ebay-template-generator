@@ -301,8 +301,8 @@ body {
 }
 
 .btn-clear {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     padding: 0;
     display: flex;
     align-items: center;
@@ -311,9 +311,10 @@ body {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     color: var(--color-text-muted);
-    font-size: 1.2rem;
+    font-size: 1rem;
     cursor: pointer;
     transition: var(--transition);
+    flex-shrink: 0;
 }
 
 .btn-clear:hover {
