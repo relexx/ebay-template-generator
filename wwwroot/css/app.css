@@ -291,7 +291,7 @@ input, select, textarea, button {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 7px 14px;
+    padding: 5px 14px;
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: var(--transition);
@@ -365,6 +365,7 @@ input, select, textarea, button {
     display: none;
     align-items: center;
     gap: 4px;
+    position: relative;
 }
 
 .phase-nav-btn {
@@ -401,9 +402,17 @@ input, select, textarea, button {
     gap: 8px;
     padding: 6px 14px;
     background: var(--color-accent);
+    border: none;
     border-radius: var(--radius-sm);
     min-width: 130px;
     justify-content: center;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    transition: var(--transition);
+}
+
+.phase-mobile-current:hover {
+    filter: brightness(1.08);
 }
 
 .phase-mobile-num {
@@ -424,6 +433,80 @@ input, select, textarea, button {
     font-size: 0.9rem;
     font-weight: 500;
     color: oklch(0.2 0 0);
+}
+
+.phase-mobile-chevron {
+    font-size: 0.7rem;
+    color: oklch(0.2 0 0);
+    opacity: 0.6;
+    line-height: 1;
+}
+
+/* Stepper flyout: jump to any phase directly */
+.stepper-flyout {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: 4px;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 180px;
+    z-index: 300;
+}
+
+.stepper-flyout.open {
+    display: flex;
+}
+
+.stepper-flyout-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-muted);
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: var(--transition);
+}
+
+.stepper-flyout-item:hover:not(:disabled) {
+    background: var(--color-bg-input);
+    color: var(--color-text);
+}
+
+.stepper-flyout-item.is-active {
+    color: var(--color-accent);
+    font-weight: 600;
+}
+
+.stepper-flyout-item.is-active .step-num {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: oklch(0.2 0 0);
+}
+
+.stepper-flyout-item.is-done .step-num {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    color: white;
+}
+
+.stepper-flyout-item:disabled {
+    opacity: 0.35;
+    cursor: default;
 }
 
 /* Main Content */

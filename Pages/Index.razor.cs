@@ -39,6 +39,7 @@ public partial class Index
 
     private bool _showSettings;
     private bool _showActionsOverflow;
+    private bool _showStepperFlyout;
 
     private string _theme = "dark";
     private string _density = "comfortable";
@@ -216,6 +217,23 @@ public partial class Index
     public void CloseActionsOverflow()
     {
         _showActionsOverflow = false;
+        StateHasChanged();
+    }
+
+    private async Task ToggleStepperFlyout()
+    {
+        _showStepperFlyout = !_showStepperFlyout;
+        if (_showStepperFlyout)
+        {
+            dotNetHelper ??= DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("registerClickOutside", "stepper-flyout-container", dotNetHelper, "CloseStepperFlyout");
+        }
+    }
+
+    [JSInvokable]
+    public void CloseStepperFlyout()
+    {
+        _showStepperFlyout = false;
         StateHasChanged();
     }
 
@@ -769,6 +787,7 @@ public partial class Index
         _iframeLoaded = false;
         _lastSetHtml = string.Empty;
         _showActionsOverflow = false;
+        _showStepperFlyout = false;
 
         if (phase >= 2)
         {

@@ -41,15 +41,31 @@
             }
         </div>
 
-        <div class="stepper-mobile" role="navigation">
+        <div class="stepper-mobile" role="navigation" id="stepper-flyout-container">
             <button class="phase-nav-btn" @onclick="async () => { if (currentPhase > 0) await GoToPhase(currentPhase - 1); }"
                     disabled="@(currentPhase == 0)" aria-label="Zurück">&#8249;</button>
-            <div class="phase-mobile-current">
+            <button class="phase-mobile-current" @onclick="ToggleStepperFlyout" aria-haspopup="true" aria-expanded="@_showStepperFlyout">
                 <span class="phase-mobile-num">@currentPhase</span>
                 <span class="phase-mobile-label">@GetPhaseName(currentPhase)</span>
-            </div>
+                <span class="phase-mobile-chevron">▾</span>
+            </button>
             <button class="phase-nav-btn" @onclick="async () => { if (currentPhase < 3 && currentPhase < _maxReached + 1) await GoToPhase(currentPhase + 1); }"
                     disabled="@(currentPhase == 3 || currentPhase >= _maxReached + 1)" aria-label="Weiter">&#8250;</button>
+            <div class="stepper-flyout @(_showStepperFlyout ? "open" : "")" role="menu">
+                @for (var i = 0; i <= 3; i++)
+                {
+                    var phase = i;
+                    var isActive  = currentPhase == phase;
+                    var isDone    = phase < currentPhase || (_maxReached >= phase && phase != currentPhase);
+                    var isLocked  = phase > _maxReached + 1;
+                    <button class="stepper-flyout-item @(isActive ? "is-active" : "") @(isDone && !isActive ? "is-done" : "")"
+                            @onclick="async () => { _showStepperFlyout = false; if (!isLocked) await GoToPhase(phase); }"
+                            disabled="@isLocked" role="menuitem">
+                        <span class="step-num">@phase</span>
+                        @GetPhaseName(phase)
+                    </button>
+                }
+            </div>
         </div>
 
         <div id="settings-container" style="position:relative; flex-shrink:0;">
