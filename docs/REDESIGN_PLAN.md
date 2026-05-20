@@ -1,6 +1,6 @@
 # Redesign-Umsetzungsplan
 
-Basis: `MOCKUP_FEATURES.md` + Entscheidungen vom 2026-05-20  
+Basis: `docs/MOCKUP_FEATURES.md` + Entscheidungen vom 2026-05-20  
 Ziel: Pixelgenaue Übernahme des Mockup-Designs in die Blazor WASM App.
 
 ---
@@ -42,7 +42,7 @@ Neue Dateien `Components/Panel.razor` und `Components/Field.razor` (keine Code-B
 `<iframe @ref="_previewFrame">` + `OnAfterRenderAsync` setzt `srcdoc` via JS-Interop (`window.setIframeSrcDoc(element, html)`). Kein URL-Encoding-Problem, kein CSS-Bleed aus der App-Shell.
 
 ### Syntax-Highlighting
-Eigene C#-Methode `SyntaxHighlight(string html)` in `TemplateGeneratorService` (oder Hilfsmethode in Index), gibt `MarkupString` mit `<span>`-Tags zurück. Klassen: `.code-tag`, `.code-attr`, `.code-string`, `.code-comment`.
+Eigene C#-Methode `SyntaxHighlightHtml(string html)` in `TemplateGeneratorService` (oder Hilfsmethode in Index), gibt `MarkupString` mit `<span>`-Tags zurück. Klassen: `.code-tag`, `.code-attr`, `.code-string`, `.code-comment`.
 
 ---
 
@@ -196,9 +196,9 @@ Eigene C#-Methode `SyntaxHighlight(string html)` in `TemplateGeneratorService` (
 
 ```
 M1 (Design-System-Fundament)
-├── M2 (App-Shell)
-├── M3 (Panel & Field)
-│   └── M4 (Stage-Rahmen)
+├── M2 (App-Shell) ──────────────────────┐
+├── M3 (Panel & Field)                   │
+│   └── M4 (Stage-Rahmen) ←─────────────┘  (braucht M1 + M2 + M3)
 │       ├── M5 (Layout-Phase)
 │       ├── M6 (Eingabe-Phase)
 │       ├── M7 (Vorschau-Phase)

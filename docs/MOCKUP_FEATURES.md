@@ -1,6 +1,6 @@
 # Mockup Feature-Liste
 
-Basis: `Template Generator Mockup/` (icons-Variante)  
+Basis: `docs/Template Generator Mockup/` (icons-Variante)  
 Ziel: Pixelgenaue Übernahme in die Blazor-App.
 
 ---
@@ -10,8 +10,8 @@ Ziel: Pixelgenaue Übernahme in die Blazor-App.
 - [ ] **Lucide SVG-Icons** — Emoji-Icons durch konsistente Lucide-Linie-Icons ersetzen (Buttons, Panels, Block-Liste, Stage-Indikatoren, generiertes HTML)
 - [ ] **Geist-Schriftarten** — `DM Sans` → `Geist`, `JetBrains Mono` → `Geist Mono`
 - [ ] **`mono`-Klasse** — URL-Felder, ID-Feld und Code-Textareas in Monospace rendern
-- [ ] **Dark / Light Mode Toggle** — Umschaltknopf im Header (Sun/Moon-Icon); CSS via `data-theme`-Attribut
-- [ ] **Density-Modus** — `comfortable` / `compact` per `data-density`-Attribut umschaltbar (Tweaks-Panel oder Settings)
+- [ ] **Dark / Light Mode Toggle** — Sun/Moon-Umschalter im Settings-Flyout (kein eigenständiger Header-Button); CSS via `data-theme`-Attribut auf `<html>`
+- [ ] **Density-Modus** — `comfortable` / `compact` per `data-density`-Attribut umschaltbar; Umschalter im Settings-Flyout (Zahnrad-Button im Topbar)
 - [ ] **Akzentfarben-Presets** — 5 auswählbare Akzentfarben (Grün, Indigo, Orange, Rot, Gelb) als OKLCH-basierte CSS-Variablen
 
 ---
@@ -75,7 +75,7 @@ Ziel: Pixelgenaue Übernahme in die Blazor-App.
 
 ---
 
-## Notizen
+## Entschiedene Abweichungen vom Mockup
 
-- Der `FixedText`-Block-Typ und die Fußzeile (`Footer`-Sektion) sind im Mockup nicht abgebildet — Klären, ob diese entfernt oder nur ausgeblendet werden sollen.
-- Das Tweaks-Panel ist ein Prototyping-Tool des Mockups und wird nicht 1:1 übernommen; Dichte und Akzentfarbe werden stattdessen in die App-Settings integriert.
+- **`FixedText`-Block, `CheckList`-Block, Fußzeile** — bleiben erhalten; waren nur Einschränkungen des Mockup-Prototypen.
+- **Tweaks-Panel** — wird nicht als eigenständiges floating Panel übernommen. Dichte, Theme und Akzentfarbe gehen im Settings-Flyout auf (Zahnrad-Icon `⚙` oben rechts im Topbar).
