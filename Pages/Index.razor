@@ -139,37 +139,34 @@
                     <p class="page-sub">Blöcke definieren und Farbschema festlegen</p>
                 </div>
                 <div class="page-head-actions">
-                    <div class="btn-stack">
-                        <button class="btn btn-secondary" @onclick="OpenNewLayoutDialog" title="Neues Layout">
-                            <Icon Name="plus" Size="14" /> Neu
-                        </button>
-                        <button class="btn btn-secondary" @onclick="OpenRenameDialog" title="Layout umbenennen"
-                                disabled="@currentLayout.IsDefault">
-                            <Icon Name="edit" Size="14" /> Umbenennen
-                        </button>
-                    </div>
-                    <div class="btn-stack page-actions-secondary">
-                        <button class="btn btn-secondary" @onclick="OpenDuplicateLayoutDialog" title="Duplizieren">
-                            <Icon Name="copy" Size="14" /> Duplizieren
-                        </button>
-                        <button class="btn btn-secondary" @onclick="ExportLayout" title="Exportieren">
-                            <Icon Name="download" Size="14" /> Export
-                        </button>
-                        <button class="btn btn-secondary" title="Importieren"
-                                @onclick='() => JS.InvokeVoidAsync("triggerClick", "layout-import")'>
-                            <Icon Name="upload" Size="14" /> Import
-                        </button>
-                        <button class="btn btn-danger btn-secondary" @onclick="DeleteLayout"
-                                disabled="@(currentLayout.IsDefault || layouts.Count <= 1)"
-                                title="Layout löschen">
-                            <Icon Name="trash" Size="14" /> Löschen
-                        </button>
-                    </div>
-                    <InputFile id="layout-import" OnChange="ImportLayout" accept=".json" style="display:none" />
-                    <div class="page-actions-overflow" id="layout-actions-overflow">
-                        <button class="btn btn-secondary page-actions-more-btn"
-                                @onclick='async () => await ToggleActionsOverflow("layout-actions-overflow")'
-                                title="Weitere Aktionen">···</button>
+                    <div class="page-actions-strip" id="layout-actions-overflow">
+                        <div class="btn-stack">
+                            <button class="btn btn-secondary" @onclick="OpenNewLayoutDialog" title="Neues Layout">
+                                <Icon Name="plus" Size="14" /> Neu
+                            </button>
+                            <button class="btn btn-secondary" @onclick="OpenRenameDialog" title="Layout umbenennen"
+                                    disabled="@currentLayout.IsDefault">
+                                <Icon Name="edit" Size="14" /> Umbenennen
+                            </button>
+                            <button class="btn btn-secondary page-actions-secondary" @onclick="OpenDuplicateLayoutDialog" title="Duplizieren">
+                                <Icon Name="copy" Size="14" /> Duplizieren
+                            </button>
+                            <button class="btn btn-secondary page-actions-secondary" @onclick="ExportLayout" title="Exportieren">
+                                <Icon Name="download" Size="14" /> Export
+                            </button>
+                            <button class="btn btn-secondary page-actions-secondary" title="Importieren"
+                                    @onclick='() => JS.InvokeVoidAsync("triggerClick", "layout-import")'>
+                                <Icon Name="upload" Size="14" /> Import
+                            </button>
+                            <button class="btn btn-danger btn-secondary page-actions-secondary" @onclick="DeleteLayout"
+                                    disabled="@(currentLayout.IsDefault || layouts.Count <= 1)"
+                                    title="Layout löschen">
+                                <Icon Name="trash" Size="14" /> Löschen
+                            </button>
+                            <button class="btn btn-secondary page-actions-more-btn"
+                                    @onclick='async () => await ToggleActionsOverflow("layout-actions-overflow")'
+                                    title="Weitere Aktionen">···</button>
+                        </div>
                         <div class="page-actions-flyout @(_showActionsOverflow ? "open" : "")">
                             <button class="btn btn-secondary" @onclick="async () => { _showActionsOverflow = false; OpenDuplicateLayoutDialog(); }">
                                 <Icon Name="copy" Size="14" /> Duplizieren
@@ -186,6 +183,7 @@
                             </button>
                         </div>
                     </div>
+                    <InputFile id="layout-import" OnChange="ImportLayout" accept=".json" style="display:none" />
                 </div>
             </div>
 
@@ -440,31 +438,28 @@
                     <p class="page-sub">Artikelinhalte befüllen</p>
                 </div>
                 <div class="page-head-actions">
-                    <div class="btn-stack">
-                        <button class="btn btn-secondary" @onclick="LoadDemo" title="Demo-Daten laden">
-                            <Icon Name="sparkles" Size="14" /> Demo
-                        </button>
-                        <button class="btn btn-secondary" @onclick="CopyJsonSchema" title="JSON-Schema kopieren">
-                            <Icon Name="fileJson" Size="14" /> Schema
-                        </button>
-                    </div>
-                    <div class="btn-stack page-actions-secondary">
-                        <button class="btn btn-secondary" @onclick="ExportArticle" title="Exportieren">
-                            <Icon Name="download" Size="14" /> Export
-                        </button>
-                        <button class="btn btn-secondary" title="Importieren"
-                                @onclick='() => JS.InvokeVoidAsync("triggerClick", "article-import")'>
-                            <Icon Name="upload" Size="14" /> Import
-                        </button>
-                        <button class="btn btn-secondary btn-danger" @onclick="ResetArticle" title="Zurücksetzen">
-                            <Icon Name="refresh" Size="14" /> Zurücksetzen
-                        </button>
-                    </div>
-                    <InputFile id="article-import" OnChange="ImportArticle" accept=".json" style="display:none" />
-                    <div class="page-actions-overflow" id="input-actions-overflow">
-                        <button class="btn btn-secondary page-actions-more-btn"
-                                @onclick='async () => await ToggleActionsOverflow("input-actions-overflow")'
-                                title="Weitere Aktionen">···</button>
+                    <div class="page-actions-strip" id="input-actions-overflow">
+                        <div class="btn-stack">
+                            <button class="btn btn-secondary" @onclick="LoadDemo" title="Demo-Daten laden">
+                                <Icon Name="sparkles" Size="14" /> Demo
+                            </button>
+                            <button class="btn btn-secondary" @onclick="CopyJsonSchema" title="JSON-Schema kopieren">
+                                <Icon Name="fileJson" Size="14" /> Schema
+                            </button>
+                            <button class="btn btn-secondary page-actions-secondary" @onclick="ExportArticle" title="Exportieren">
+                                <Icon Name="download" Size="14" /> Export
+                            </button>
+                            <button class="btn btn-secondary page-actions-secondary" title="Importieren"
+                                    @onclick='() => JS.InvokeVoidAsync("triggerClick", "article-import")'>
+                                <Icon Name="upload" Size="14" /> Import
+                            </button>
+                            <button class="btn btn-secondary btn-danger page-actions-secondary" @onclick="ResetArticle" title="Zurücksetzen">
+                                <Icon Name="refresh" Size="14" /> Zurücksetzen
+                            </button>
+                            <button class="btn btn-secondary page-actions-more-btn"
+                                    @onclick='async () => await ToggleActionsOverflow("input-actions-overflow")'
+                                    title="Weitere Aktionen">···</button>
+                        </div>
                         <div class="page-actions-flyout @(_showActionsOverflow ? "open" : "")">
                             <button class="btn btn-secondary" @onclick="async () => { _showActionsOverflow = false; await ExportArticle(); }">
                                 <Icon Name="download" Size="14" /> Export
@@ -477,6 +472,7 @@
                             </button>
                         </div>
                     </div>
+                    <InputFile id="article-import" OnChange="ImportArticle" accept=".json" style="display:none" />
                 </div>
             </div>
 
