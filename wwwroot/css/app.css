@@ -388,10 +388,52 @@ body {
 /* ========== Toolbar ========== */
 .toolbar {
     display: flex;
-    gap: 12px;
+    gap: 8px;
     margin-bottom: 24px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
+}
+
+.toolbar-inline-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.toolbar-overflow-group {
+    display: none;
+    position: relative;
+}
+
+.toolbar-more-btn {
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    padding: 0 12px;
+}
+
+.toolbar-flyout {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: 8px;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 180px;
+    z-index: 200;
+}
+
+.toolbar-flyout.open {
+    display: flex;
+}
+
+.toolbar-flyout .btn {
+    justify-content: flex-start;
+    width: 100%;
 }
 
 .layout-select {
@@ -1022,6 +1064,14 @@ textarea {
     }
 
     .phase-indicator-mobile {
+        display: flex;
+    }
+
+    .toolbar-inline-group {
+        display: none;
+    }
+
+    .toolbar-overflow-group {
         display: flex;
     }
 }

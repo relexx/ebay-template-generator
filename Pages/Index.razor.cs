@@ -28,6 +28,9 @@ public partial class Index
     private bool showImportConflict;
     private ArticleData? importedArticle;
 
+    private bool _showLayoutMore;
+    private bool _showInputMore;
+
     private string notification = string.Empty;
     private bool notificationSuccess;
     private CancellationTokenSource? notificationCts;
