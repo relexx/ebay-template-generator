@@ -38,6 +38,7 @@ public partial class Index
     private bool _focusDialogInput;
 
     private bool _showSettings;
+    private bool _showActionsOverflow;
 
     private string _theme = "dark";
     private string _density = "comfortable";
@@ -196,6 +197,23 @@ public partial class Index
     public void CloseSettings()
     {
         _showSettings = false;
+        StateHasChanged();
+    }
+
+    private async Task ToggleActionsOverflow(string containerId)
+    {
+        _showActionsOverflow = !_showActionsOverflow;
+        if (_showActionsOverflow)
+        {
+            dotNetHelper ??= DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("registerClickOutside", containerId, dotNetHelper, "CloseActionsOverflow");
+        }
+    }
+
+    [JSInvokable]
+    public void CloseActionsOverflow()
+    {
+        _showActionsOverflow = false;
         StateHasChanged();
     }
 
@@ -747,6 +765,7 @@ public partial class Index
     {
         _navDirection = phase > currentPhase ? 1 : phase < currentPhase ? -1 : 0;
         _iframeLoaded = false;
+        _showActionsOverflow = false;
 
         if (phase >= 2)
         {

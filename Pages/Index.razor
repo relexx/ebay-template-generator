@@ -147,6 +147,8 @@
                                 disabled="@currentLayout.IsDefault">
                             <Icon Name="edit" Size="14" /> Umbenennen
                         </button>
+                    </div>
+                    <div class="btn-stack page-actions-secondary">
                         <button class="btn btn-secondary" @onclick="OpenDuplicateLayoutDialog" title="Duplizieren">
                             <Icon Name="copy" Size="14" /> Duplizieren
                         </button>
@@ -157,12 +159,32 @@
                                 @onclick='() => JS.InvokeVoidAsync("triggerClick", "layout-import")'>
                             <Icon Name="upload" Size="14" /> Import
                         </button>
-                        <InputFile id="layout-import" OnChange="ImportLayout" accept=".json" style="display:none" />
                         <button class="btn btn-danger btn-secondary" @onclick="DeleteLayout"
                                 disabled="@(currentLayout.IsDefault || layouts.Count <= 1)"
                                 title="Layout löschen">
                             <Icon Name="trash" Size="14" /> Löschen
                         </button>
+                    </div>
+                    <InputFile id="layout-import" OnChange="ImportLayout" accept=".json" style="display:none" />
+                    <div class="page-actions-overflow" id="layout-actions-overflow">
+                        <button class="btn btn-secondary page-actions-more-btn"
+                                @onclick='async () => await ToggleActionsOverflow("layout-actions-overflow")'
+                                title="Weitere Aktionen">···</button>
+                        <div class="page-actions-flyout @(_showActionsOverflow ? "open" : "")">
+                            <button class="btn btn-secondary" @onclick="async () => { _showActionsOverflow = false; OpenDuplicateLayoutDialog(); }">
+                                <Icon Name="copy" Size="14" /> Duplizieren
+                            </button>
+                            <button class="btn btn-secondary" @onclick="async () => { _showActionsOverflow = false; await ExportLayout(); }">
+                                <Icon Name="download" Size="14" /> Export
+                            </button>
+                            <button class="btn btn-secondary" @onclick='async () => { _showActionsOverflow = false; await JS.InvokeVoidAsync("triggerClick", "layout-import"); }'>
+                                <Icon Name="upload" Size="14" /> Import
+                            </button>
+                            <button class="btn btn-danger btn-secondary" @onclick="async () => { _showActionsOverflow = false; await DeleteLayout(); }"
+                                    disabled="@(currentLayout.IsDefault || layouts.Count <= 1)">
+                                <Icon Name="trash" Size="14" /> Löschen
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -425,6 +447,8 @@
                         <button class="btn btn-secondary" @onclick="CopyJsonSchema" title="JSON-Schema kopieren">
                             <Icon Name="fileJson" Size="14" /> Schema
                         </button>
+                    </div>
+                    <div class="btn-stack page-actions-secondary">
                         <button class="btn btn-secondary" @onclick="ExportArticle" title="Exportieren">
                             <Icon Name="download" Size="14" /> Export
                         </button>
@@ -432,10 +456,26 @@
                                 @onclick='() => JS.InvokeVoidAsync("triggerClick", "article-import")'>
                             <Icon Name="upload" Size="14" /> Import
                         </button>
-                        <InputFile id="article-import" OnChange="ImportArticle" accept=".json" style="display:none" />
                         <button class="btn btn-secondary btn-danger" @onclick="ResetArticle" title="Zurücksetzen">
                             <Icon Name="refresh" Size="14" /> Zurücksetzen
                         </button>
+                    </div>
+                    <InputFile id="article-import" OnChange="ImportArticle" accept=".json" style="display:none" />
+                    <div class="page-actions-overflow" id="input-actions-overflow">
+                        <button class="btn btn-secondary page-actions-more-btn"
+                                @onclick='async () => await ToggleActionsOverflow("input-actions-overflow")'
+                                title="Weitere Aktionen">···</button>
+                        <div class="page-actions-flyout @(_showActionsOverflow ? "open" : "")">
+                            <button class="btn btn-secondary" @onclick="async () => { _showActionsOverflow = false; await ExportArticle(); }">
+                                <Icon Name="download" Size="14" /> Export
+                            </button>
+                            <button class="btn btn-secondary" @onclick='async () => { _showActionsOverflow = false; await JS.InvokeVoidAsync("triggerClick", "article-import"); }'>
+                                <Icon Name="upload" Size="14" /> Import
+                            </button>
+                            <button class="btn btn-danger btn-secondary" @onclick="() => { _showActionsOverflow = false; ResetArticle(); }">
+                                <Icon Name="refresh" Size="14" /> Zurücksetzen
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -586,10 +626,12 @@
                     <p class="page-sub">Generierten Code kopieren oder herunterladen</p>
                 </div>
                 <div class="page-head-actions">
-                    <span class="badge badge-mono">@generatedHtml.Length Zeichen</span>
-                    <span class="badge badge-mono">@generatedHtml.Split('\n').Length Zeilen</span>
-                    <span class="badge badge-mono">@((System.Text.Encoding.UTF8.GetByteCount(generatedHtml) / 1024.0).ToString("F1")) kB</span>
-                    <span class="badge">UTF-8 · text/html</span>
+                    <div class="html-badges">
+                        <span class="badge badge-mono">@generatedHtml.Length Zeichen</span>
+                        <span class="badge badge-mono">@generatedHtml.Split('\n').Length Zeilen</span>
+                        <span class="badge badge-mono">@((System.Text.Encoding.UTF8.GetByteCount(generatedHtml) / 1024.0).ToString("F1")) kB</span>
+                        <span class="badge">UTF-8 · text/html</span>
+                    </div>
                     <div class="btn-stack">
                         <button class="btn btn-secondary" @onclick="CopyHtml">
                             <Icon Name="copy" Size="14" /> Kopieren
