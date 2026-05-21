@@ -58,13 +58,20 @@ public class TemplateGeneratorService
 
             var html = block.Type switch
             {
-                BlockType.Image => GenerateImageBlock(block, content, colors, blockIndex),
-                BlockType.RichText => GenerateRichTextBlock(block, content, colors, blockIndex),
-                BlockType.KeyValueGrid => GenerateKeyValueGridBlock(block, content, colors, blockIndex),
-                BlockType.DataTable => GenerateDataTableBlock(block, content, colors, blockIndex),
-                BlockType.FeatureCards => GenerateFeatureCardsBlock(block, content, colors, blockIndex),
-                BlockType.CheckList => GenerateCheckListBlock(block, content, colors, blockIndex),
-                BlockType.FixedText => GenerateFixedTextBlock(block, content, colors, blockIndex),
+                BlockType.Image         => GenerateImageBlock(block, content, colors, blockIndex),
+                BlockType.RichText      => GenerateRichTextBlock(block, content, colors, blockIndex),
+                BlockType.KeyValueGrid  => GenerateKeyValueGridBlock(block, content, colors, blockIndex),
+                BlockType.DataTable     => GenerateDataTableBlock(block, content, colors, blockIndex),
+                BlockType.FeatureCards  => GenerateFeatureCardsBlock(block, content, colors, blockIndex),
+                BlockType.CheckList     => GenerateCheckListBlock(block, content, colors, blockIndex),
+                BlockType.FixedText     => GenerateFixedTextBlock(block, content, colors, blockIndex),
+                BlockType.ProsConsTable => GenerateProsConsTableBlock(block, content, colors, blockIndex),
+                BlockType.CalloutBox    => GenerateCalloutBoxBlock(block, content, colors, blockIndex),
+                BlockType.BadgeStrip    => GenerateBadgeStripBlock(block, content, colors, blockIndex),
+                BlockType.RatingSnippet => GenerateRatingSnippetBlock(block, content, colors, blockIndex),
+                BlockType.Gallery       => GenerateGalleryBlock(block, content, colors, blockIndex),
+                BlockType.LinkList      => GenerateLinkListBlock(block, content, colors, blockIndex),
+                BlockType.HeroBanner    => GenerateHeroBannerBlock(block, content, colors, blockIndex),
                 _ => string.Empty
             };
 
@@ -340,6 +347,276 @@ public class TemplateGeneratorService
       <td style=""padding: 25px 30px;"">
         {titleHtml}
         {html}
+      </td>
+    </tr>
+  </table>
+";
+    }
+
+    private string GenerateProsConsTableBlock(BlockDefinition block, string content, ColorScheme colors, int blockIndex)
+    {
+        var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var pros = lines.Where(l => l.TrimStart().StartsWith("+")).Select(l => l.TrimStart().TrimStart('+').Trim()).ToList();
+        var cons = lines.Where(l => l.TrimStart().StartsWith("-")).Select(l => l.TrimStart().TrimStart('-').Trim()).ToList();
+
+        var titleHtml = BlockTitleHtml(block, colors);
+        var maxRows = Math.Max(pros.Count, cons.Count);
+        if (maxRows == 0) return string.Empty;
+
+        var sb = new StringBuilder();
+        sb.AppendLine($@"  <!-- {block.Title} -->
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
+    <tr>
+      <td style=""padding: 25px 30px;"">
+        {titleHtml}
+        <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""border-radius: 6px; overflow: hidden; border: 1px solid #e0e0e0;"">
+          <tr>
+            <td width=""50%"" style=""padding: 12px 16px; background: {colors.AccentColor}; color: #1a1a1a; font-weight: 600; font-size: 14px;"">✓ Vorteile</td>
+            <td width=""50%"" style=""padding: 12px 16px; background: {colors.PrimaryColor}; color: #ffffff; font-weight: 600; font-size: 14px;"">✗ Nachteile</td>
+          </tr>");
+
+        for (int i = 0; i < maxRows; i++)
+        {
+            var pro = i < pros.Count ? pros[i] : "";
+            var con = i < cons.Count ? cons[i] : "";
+            var bg = i % 2 == 1 ? "background: #fafafa;" : "";
+            var border = i < maxRows - 1 ? "border-bottom: 1px solid #eee;" : "";
+
+            sb.AppendLine($@"          <tr style=""{bg}"">
+            <td style=""padding: 10px 16px; {border} vertical-align: top;"">
+              {(string.IsNullOrEmpty(pro) ? "&nbsp;" : $"<span style=\"color: #27ae60; font-weight: 600; margin-right: 6px;\">✓</span>{Encode(pro)}")}
+            </td>
+            <td style=""padding: 10px 16px; {border} vertical-align: top;"">
+              {(string.IsNullOrEmpty(con) ? "&nbsp;" : $"<span style=\"color: #e74c3c; font-weight: 600; margin-right: 6px;\">✗</span>{Encode(con)}")}
+            </td>
+          </tr>");
+        }
+
+        sb.AppendLine(@"        </table>
+      </td>
+    </tr>
+  </table>
+");
+        return sb.ToString();
+    }
+
+    private string GenerateCalloutBoxBlock(BlockDefinition block, string content, ColorScheme colors, int blockIndex)
+    {
+        var html = Markdown.ToHtml(content, _pipeline);
+        html = html.Replace("<p>", "<p style=\"margin: 0 0 10px 0; font-size: 15px; color: #333;\">");
+
+        var (borderColor, bgColor, iconName, label) = block.Options.CalloutVariant switch
+        {
+            "warning" => ("#e8a000", "#fef9e7", "alertTriangle", "Hinweis"),
+            "tip"     => ("#27ae60", "#eafaf1", "lightbulb",     "Tipp"),
+            "error"   => ("#e74c3c", "#fdf2f2", "xCircle",       "Achtung"),
+            _         => ("#0071c5", "#e8f4fd", "info",          "Info"),
+        };
+
+        var iconSvg = IconHelper.SvgForHtml(iconName, borderColor, 16);
+        var titleHtml = BlockTitleHtml(block, colors);
+
+        return $@"  <!-- {block.Title} -->
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
+    <tr>
+      <td style=""padding: 25px 30px;"">
+        {titleHtml}
+        <div style=""border-left: 4px solid {borderColor}; background: {bgColor}; padding: 16px 20px; border-radius: 0 6px 6px 0;"">
+          <div style=""display: flex; align-items: center; gap: 8px; font-weight: 600; color: {borderColor}; margin-bottom: 10px; font-size: 14px;"">
+            {iconSvg}&nbsp;{label}
+          </div>
+          <div>{html}</div>
+        </div>
+      </td>
+    </tr>
+  </table>
+";
+    }
+
+    private string GenerateBadgeStripBlock(BlockDefinition block, string content, ColorScheme colors, int blockIndex)
+    {
+        var items = content.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(l => l.Trim()).Where(l => !string.IsNullOrEmpty(l)).ToList();
+        if (items.Count == 0) return string.Empty;
+
+        var titleHtml = BlockTitleHtml(block, colors);
+        var sb = new StringBuilder();
+        sb.AppendLine($@"  <!-- {block.Title} -->
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
+    <tr>
+      <td style=""padding: 25px 30px;"">
+        {titleHtml}
+        <div style=""display: flex; flex-wrap: wrap; gap: 10px; align-items: center;"">");
+
+        foreach (var item in items)
+            sb.AppendLine($@"          <span style=""display: inline-block; background: {colors.PrimaryColor}; color: {colors.AccentColor}; padding: 8px 18px; border-radius: 30px; font-size: 13px; font-weight: 500; white-space: nowrap; letter-spacing: 0.2px;"">{Encode(item)}</span>");
+
+        sb.AppendLine(@"        </div>
+      </td>
+    </tr>
+  </table>
+");
+        return sb.ToString();
+    }
+
+    private string GenerateRatingSnippetBlock(BlockDefinition block, string content, ColorScheme colors, int blockIndex)
+    {
+        var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var scoreStr = lines.Length > 0 ? lines[0].Trim() : "5";
+        var subtitle = lines.Length > 1 ? string.Join(" ", lines.Skip(1)).Trim() : "";
+
+        double.TryParse(scoreStr.Replace(',', '.'),
+            System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out double score);
+        score = Math.Clamp(score, 0, 5);
+
+        var stars = RenderStars(score, colors.AccentColor);
+        var titleHtml = BlockTitleHtml(block, colors);
+
+        return $@"  <!-- {block.Title} -->
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
+    <tr>
+      <td style=""padding: 25px 30px; text-align: center;"">
+        {titleHtml}
+        <div style=""font-size: 36px; letter-spacing: 6px; margin-bottom: 10px; line-height: 1;"">{stars}</div>
+        <div style=""font-size: 42px; font-weight: 700; color: #1a1a1a; line-height: 1; margin-bottom: 4px;"">{Encode(scoreStr)}</div>
+        <div style=""font-size: 14px; color: #888; margin-bottom: {(string.IsNullOrEmpty(subtitle) ? "0" : "6px")};"">von 5 Sternen</div>
+        {(string.IsNullOrEmpty(subtitle) ? "" : $"<div style=\"font-size: 14px; color: #666;\">{Encode(subtitle)}</div>")}
+      </td>
+    </tr>
+  </table>
+";
+    }
+
+    private static string RenderStars(double score, string accentColor)
+    {
+        var sb = new StringBuilder();
+        for (int i = 1; i <= 5; i++)
+        {
+            if (score >= i - 0.25)
+                sb.Append($"<span style=\"color: {accentColor};\">★</span>");
+            else if (score >= i - 0.75)
+                sb.Append($"<span style=\"color: {accentColor}; opacity: 0.4;\">★</span>");
+            else
+                sb.Append("<span style=\"color: #ccc;\">★</span>");
+        }
+        return sb.ToString();
+    }
+
+    private string GenerateGalleryBlock(BlockDefinition block, string content, ColorScheme colors, int blockIndex)
+    {
+        var urls = content.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(l => l.Trim()).Where(l => !string.IsNullOrEmpty(l)).ToList();
+        if (urls.Count == 0) return string.Empty;
+
+        var columns = Math.Max(1, Math.Min(4, block.Options.Columns));
+        var widthPercent = 100 / columns;
+        var titleHtml = BlockTitleHtml(block, colors);
+
+        var sb = new StringBuilder();
+        sb.AppendLine($@"  <!-- {block.Title} -->
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
+    <tr>
+      <td style=""padding: 25px 30px;"">
+        {titleHtml}
+        <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"">");
+
+        for (int i = 0; i < urls.Count; i++)
+        {
+            bool rowStart = i % columns == 0;
+            bool rowEnd = (i + 1) % columns == 0 || i == urls.Count - 1;
+
+            if (rowStart) sb.AppendLine("          <tr>");
+
+            sb.AppendLine($@"            <td width=""{widthPercent}%"" style=""padding: 4px; vertical-align: top;"">
+              <img src=""{Encode(urls[i])}"" alt=""Galerie-Bild"" style=""width: 100%; height: auto; display: block; border-radius: 4px;"">
+            </td>");
+
+            if (rowEnd)
+            {
+                var remaining = columns - (i % columns) - 1;
+                for (int j = 0; j < remaining; j++)
+                    sb.AppendLine($"            <td width=\"{widthPercent}%\" style=\"padding: 4px;\"></td>");
+                sb.AppendLine("          </tr>");
+            }
+        }
+
+        sb.AppendLine(@"        </table>
+      </td>
+    </tr>
+  </table>
+");
+        return sb.ToString();
+    }
+
+    private string GenerateLinkListBlock(BlockDefinition block, string content, ColorScheme colors, int blockIndex)
+    {
+        var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        if (lines.Length == 0) return string.Empty;
+
+        var titleHtml = BlockTitleHtml(block, colors);
+        var sb = new StringBuilder();
+        sb.AppendLine($@"  <!-- {block.Title} -->
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
+    <tr>
+      <td style=""padding: 25px 30px;"">
+        {titleHtml}
+        <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;"">");
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            var parts = lines[i].Split('|', 2);
+            var label = parts[0].Trim();
+            var url = parts.Length > 1 ? parts[1].Trim() : "#";
+            var borderStyle = i < lines.Length - 1 ? "border-bottom: 1px solid #eee;" : "";
+            var bg = i % 2 == 1 ? " background: #fafafa;" : "";
+
+            sb.AppendLine($@"          <tr>
+            <td style=""padding: 13px 16px; {borderStyle}{bg}"">
+              <a href=""{Encode(url)}"" target=""_blank"" rel=""noopener noreferrer""
+                 style=""color: #0071c5; text-decoration: none; font-size: 15px; display: flex; align-items: center; gap: 10px;"">
+                <span style=""color: {colors.AccentColor}; font-size: 18px; line-height: 1; flex-shrink: 0;"">→</span>
+                {Encode(label)}
+              </a>
+            </td>
+          </tr>");
+        }
+
+        sb.AppendLine(@"        </table>
+      </td>
+    </tr>
+  </table>
+");
+        return sb.ToString();
+    }
+
+    private string GenerateHeroBannerBlock(BlockDefinition block, string content, ColorScheme colors, int blockIndex)
+    {
+        var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var imageUrl = lines.Length > 0 ? lines[0].Trim() : "";
+        var title    = lines.Length > 1 ? lines[1].Trim() : "";
+        var subtitle = lines.Length > 2 ? lines[2].Trim() : "";
+        if (string.IsNullOrEmpty(imageUrl)) return string.Empty;
+
+        var textAlign = block.Options.Alignment switch { "left" => "left", "right" => "right", _ => "center" };
+        var opacity   = Math.Clamp(block.Options.OverlayOpacity, 0, 90) / 100.0;
+        var overlayBg = $"rgba(0,0,0,{opacity:F2})";
+        var titleHtml = BlockTitleHtml(block, colors);
+
+        return $@"  <!-- {block.Title} -->
+  <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0"" style=""background: {BlockBackground(blockIndex, colors)}; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0;"">
+    <tr>
+      <td style=""padding: 0;"">
+        {(block.Options.ShowTitle ? $"<div style=\"padding: 20px 30px 0;\">{titleHtml}</div>" : "")}
+        <table width=""100%"" cellpadding=""0"" cellspacing=""0"" border=""0""
+               style=""background-image: url('{Encode(imageUrl)}'); background-size: cover; background-position: center; min-height: 240px;"">
+          <tr>
+            <td style=""padding: 60px 40px; background: {overlayBg}; text-align: {textAlign};"">
+              {(string.IsNullOrEmpty(title) ? "" : $"<div style=\"font-size: 30px; font-weight: 700; color: #ffffff; margin-bottom: 10px; text-shadow: 0 2px 6px rgba(0,0,0,0.5); line-height: 1.2;\">{Encode(title)}</div>")}
+              {(string.IsNullOrEmpty(subtitle) ? "" : $"<div style=\"font-size: 16px; color: rgba(255,255,255,0.9); text-shadow: 0 1px 4px rgba(0,0,0,0.5);\">{Encode(subtitle)}</div>")}
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>

@@ -24,7 +24,28 @@ public enum BlockType
     CheckList,
 
     /// <summary>Fester Text aus dem Layout (Markdown, mit Standardwert)</summary>
-    FixedText
+    FixedText,
+
+    /// <summary>Zweispaltige Vor-/Nachteile-Tabelle</summary>
+    ProsConsTable,
+
+    /// <summary>Farbige Callout-Box: Info, Warnung, Tipp, Fehler</summary>
+    CalloutBox,
+
+    /// <summary>Horizontale Reihe aus farbigen Badges</summary>
+    BadgeStrip,
+
+    /// <summary>Statische Sternebewertung mit optionalem Kurztext</summary>
+    RatingSnippet,
+
+    /// <summary>Grid-Bildergalerie aus mehreren URLs</summary>
+    Gallery,
+
+    /// <summary>Klickbare Link-/Download-Liste</summary>
+    LinkList,
+
+    /// <summary>Vollbreites Bild mit überlagertem Titeltext</summary>
+    HeroBanner
 }
 
 /// <summary>
@@ -89,6 +110,12 @@ public class BlockOptions
 
     // === FixedText Optionen ===
     public string FixedContent { get; set; } = string.Empty;
+
+    // === CalloutBox Optionen ===
+    public string CalloutVariant { get; set; } = "info";  // "info" | "warning" | "tip" | "error"
+
+    // === HeroBanner Optionen ===
+    public int OverlayOpacity { get; set; } = 50;
     
     public BlockOptions Clone() => new()
     {
@@ -101,7 +128,9 @@ public class BlockOptions
         Columns = Columns,
         Alignment = Alignment,
         MaxWidth = MaxWidth,
-        FixedContent = FixedContent
+        FixedContent = FixedContent,
+        CalloutVariant = CalloutVariant,
+        OverlayOpacity = OverlayOpacity
     };
     
     public static BlockOptions CreateDefault(BlockType type) => type switch
@@ -118,7 +147,14 @@ public class BlockOptions
         },
         BlockType.FeatureCards => new(),
         BlockType.CheckList => new() { BulletChar = "✓" },
-        BlockType.FixedText => new() { FixedContent = "**Hinweis:** Standardtext hier eingeben..." },
+        BlockType.FixedText       => new() { FixedContent = "**Hinweis:** Standardtext hier eingeben..." },
+        BlockType.ProsConsTable   => new(),
+        BlockType.CalloutBox      => new() { CalloutVariant = "info" },
+        BlockType.BadgeStrip      => new(),
+        BlockType.RatingSnippet   => new(),
+        BlockType.Gallery         => new() { Columns = 3 },
+        BlockType.LinkList        => new(),
+        BlockType.HeroBanner      => new() { Alignment = "center", OverlayOpacity = 50, ShowTitle = false },
         _ => new()
     };
 }
@@ -211,6 +247,76 @@ public static class BlockTypeExtensions
             InputHint:        null,
             TextareaRows:     4,
             DemoContent:      "**Hinweis:** Dies ist ein fester Textbaustein aus dem Layout."
+        ),
+        [BlockType.ProsConsTable] = new(
+            Icon:             "checkCircle",
+            DefaultTitle:     "Vor- & Nachteile",
+            DisplayName:      "Pros & Cons",
+            InputLabel:       "Zeilen mit + (Vorteil) oder - (Nachteil)",
+            InputPlaceholder: "+ Vorteil 1\n+ Vorteil 2\n- Nachteil 1",
+            InputHint:        "+ Vorteil · - Nachteil",
+            TextareaRows:     8,
+            DemoContent:      "+ Erstklassige Materialqualität\n+ Einfache Bedienung\n+ Langlebige Verarbeitung\n+ Energieeffizient\n- Kein Netzteil enthalten\n- Nur in einer Farbe verfügbar"
+        ),
+        [BlockType.CalloutBox] = new(
+            Icon:             "alertTriangle",
+            DefaultTitle:     "Hinweis",
+            DisplayName:      "Hinweisbox",
+            InputLabel:       "Text (Markdown unterstützt)",
+            InputPlaceholder: "Wichtiger Hinweis für den Käufer...",
+            InputHint:        null,
+            TextareaRows:     4,
+            DemoContent:      "Bitte achten Sie vor dem Kauf auf die **Kompatibilität** mit Ihrem Gerät. Bei Fragen stehen wir gerne per Nachricht zur Verfügung."
+        ),
+        [BlockType.BadgeStrip] = new(
+            Icon:             "tags",
+            DefaultTitle:     "Eigenschaften",
+            DisplayName:      "Badge-Streifen",
+            InputLabel:       "Pro Zeile: Ein Badge-Text",
+            InputPlaceholder: "✓ Kostenloser Versand\n✓ 30 Tage Rückgabe",
+            InputHint:        null,
+            TextareaRows:     5,
+            DemoContent:      "✓ Kostenloser Versand\n✓ 30 Tage Rückgabe\n✓ Sicher & verschlüsselt\n⚙ Deutsche Qualität\n★ Top-Bewertungen"
+        ),
+        [BlockType.RatingSnippet] = new(
+            Icon:             "star",
+            DefaultTitle:     "Kundenbewertungen",
+            DisplayName:      "Bewertung",
+            InputLabel:       "Zeile 1: Note (1–5), Zeile 2: Untertitel",
+            InputPlaceholder: "4.5\n128 Bewertungen | Sehr empfehlenswert",
+            InputHint:        "Note von 1.0 bis 5.0",
+            TextareaRows:     3,
+            DemoContent:      "4.5\n128 Bewertungen | Sehr empfehlenswert"
+        ),
+        [BlockType.Gallery] = new(
+            Icon:             "grid",
+            DefaultTitle:     "Bildergalerie",
+            DisplayName:      "Bildergalerie",
+            InputLabel:       "Pro Zeile: Bild-URL oder Base64",
+            InputPlaceholder: "https://...\nhttps://...\nhttps://...",
+            InputHint:        null,
+            TextareaRows:     6,
+            DemoContent:      "https://placehold.co/400x300/1a1a1a/f5c518?text=Bild+1\nhttps://placehold.co/400x300/2a2a2a/f5c518?text=Bild+2\nhttps://placehold.co/400x300/333/f5c518?text=Bild+3"
+        ),
+        [BlockType.LinkList] = new(
+            Icon:             "link",
+            DefaultTitle:     "Downloads & Links",
+            DisplayName:      "Link-Liste",
+            InputLabel:       "Pro Zeile: Beschriftung | URL",
+            InputPlaceholder: "Bedienungsanleitung | https://...\nDatenblatt | https://...",
+            InputHint:        "Beschriftung | URL",
+            TextareaRows:     5,
+            DemoContent:      "Bedienungsanleitung | https://beispiel.de/anleitung.pdf\nDatenblatt | https://beispiel.de/datenblatt.pdf\nService-Portal | https://beispiel.de/service"
+        ),
+        [BlockType.HeroBanner] = new(
+            Icon:             "image",
+            DefaultTitle:     "Banner",
+            DisplayName:      "Hero-Banner",
+            InputLabel:       "Zeile 1: Bild-URL · Zeile 2: Titel · Zeile 3: Untertitel",
+            InputPlaceholder: "https://...\nÜberschrift\nOptionale Unterzeile",
+            InputHint:        "URL · Titel · Untertitel",
+            TextareaRows:     4,
+            DemoContent:      "https://placehold.co/760x300/1a1a1a/f5c518?text=Hero+Banner\nDas Premium Produkt\nJetzt entdecken"
         ),
     };
 

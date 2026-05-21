@@ -442,6 +442,49 @@
                           placeholder="Fester Text, der im Layout gespeichert wird..."></textarea>
             </Field>
         }
+
+        @if (block.Type == BlockType.CalloutBox)
+        {
+            <Field Label="Variante">
+                <select @bind="block.Options.CalloutVariant" @bind:after="SaveLayouts">
+                    <option value="info">ℹ Info (Blau)</option>
+                    <option value="warning">⚠ Hinweis (Gelb)</option>
+                    <option value="tip">💡 Tipp (Grün)</option>
+                    <option value="error">✗ Achtung (Rot)</option>
+                </select>
+            </Field>
+        }
+
+        @if (block.Type == BlockType.Gallery)
+        {
+            <Field Label="Spalten">
+                <select @bind="block.Options.Columns" @bind:after="SaveLayouts">
+                    <option value="2">2 Spalten</option>
+                    <option value="3">3 Spalten</option>
+                    <option value="4">4 Spalten</option>
+                </select>
+            </Field>
+        }
+
+        @if (block.Type == BlockType.HeroBanner)
+        {
+            <Field Label="Textausrichtung">
+                <select @bind="block.Options.Alignment" @bind:after="SaveLayouts">
+                    <option value="left">Links</option>
+                    <option value="center">Zentriert</option>
+                    <option value="right">Rechts</option>
+                </select>
+            </Field>
+            <Field Label="Overlay-Deckkraft">
+                <select @bind="block.Options.OverlayOpacity" @bind:after="SaveLayouts">
+                    <option value="0">Keiner (0%)</option>
+                    <option value="25">Leicht (25%)</option>
+                    <option value="50">Mittel (50%)</option>
+                    <option value="70">Stark (70%)</option>
+                    <option value="85">Sehr stark (85%)</option>
+                </select>
+            </Field>
+        }
     };
 
     private RenderFragment RenderBulletPicker(BlockDefinition block) => __builder =>
