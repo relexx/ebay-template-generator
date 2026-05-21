@@ -41,6 +41,18 @@ public partial class Index
     private bool _showActionsOverflow;
     private bool _showStepperFlyout;
     private bool _showAbout;
+    private bool _showShortcuts;
+
+    // Paste dialog
+    private bool _showPasteDialog;
+    private string _pasteContent = string.Empty;
+
+    // Saved articles
+    private record SavedArticle(string Name, DateTime SavedAt, ArticleData Data);
+    private List<SavedArticle> _savedArticles = new();
+    private bool _showSavedArticles;
+    private bool _showSaveNameDialog;
+    private string _saveArticleName = string.Empty;
 
     private string? _confirmTitle;
     private string? _confirmMessage;
@@ -90,6 +102,7 @@ public partial class Index
         await LoadLayouts();
         await LoadArticle();
         await LoadSettings();
+        await LoadSavedArticles();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -98,12 +111,14 @@ public partial class Index
         {
             dotNetHelper = DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("window.registerKeyNav", dotNetHelper);
+            await JS.InvokeVoidAsync("initSidebarWidth", Constants.Storage.SidebarWidthKey);
         }
 
         if (currentPhase == 0 && (firstRender || _needsSortableInit))
         {
             _needsSortableInit = false;
             await InitSortable();
+            try { await JS.InvokeVoidAsync("initSidebarResize", Constants.Storage.SidebarWidthKey); } catch { }
         }
 
         if (currentPhase == 2 && !string.IsNullOrEmpty(generatedHtml) && generatedHtml != _lastSetHtml)
@@ -163,6 +178,13 @@ public partial class Index
     }
 
     private void CloseAbout() => _showAbout = false;
+
+    [JSInvokable]
+    public void ToggleShortcutOverlay()
+    {
+        _showShortcuts = !_showShortcuts;
+        StateHasChanged();
+    }
 
     private void AskClearAllData()
     {
@@ -719,6 +741,8 @@ public partial class Index
                 return;
             }
             await using var stream = file.OpenReadStream(Constants.FileLimits.MaxImageSizeBytes);
+            if (file.Size > Constants.FileLimits.WarnImageSizeBytes)
+                await ShowNotification($"⚠ Großes Bild ({file.Size / 1024.0 / 1024.0:F1} MB) – für eBay empfohlen: unter 1 MB", false);
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
             article.SetBlockContent(blockId, $"data:{file.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}");
@@ -743,25 +767,9 @@ public partial class Index
         try
         {
             await using var stream = e.File.OpenReadStream(Constants.FileLimits.MaxImportSizeBytes);
-            importedArticle = await JsonSerializer.DeserializeAsync<ArticleData>(stream);
-
-            if (importedArticle is null) return;
-
-            var layoutIdMatches = importedArticle.Layout?.Id == currentLayout.Id;
-            var isCompatible = currentLayout.IsCompatibleWith(importedArticle.Layout);
-
-            if (layoutIdMatches || isCompatible)
-            {
-                article = importedArticle;
-                article.Layout = currentLayout;
-                PrefillFixedTextBlocks();
-                InvalidatePreview();
-                await ShowNotification("✓ Artikel importiert!", true);
-            }
-            else
-            {
-                _showImportConflict = true;
-            }
+            using var reader = new StreamReader(stream);
+            var json = await reader.ReadToEndAsync();
+            await ImportArticleFromJson(json);
         }
         catch (Exception ex)
         {
@@ -808,6 +816,88 @@ public partial class Index
         await ShowNotification("✓ Daten importiert", true);
     }
 
+    private async Task ImportArticleFromJson(string json)
+    {
+        try
+        {
+            var imported = JsonSerializer.Deserialize<ArticleData>(json, Helpers.JsonOptions);
+            if (imported is null) return;
+
+            var layoutIdMatches = imported.Layout?.Id == currentLayout.Id;
+            var isCompatible    = currentLayout.IsCompatibleWith(imported.Layout);
+
+            if (layoutIdMatches || isCompatible)
+            {
+                article = imported;
+                article.Layout = currentLayout;
+                PrefillFixedTextBlocks();
+                InvalidatePreview();
+                await ShowNotification("✓ Artikel importiert!", true);
+            }
+            else
+            {
+                importedArticle = imported;
+                _showImportConflict = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowNotification($"Import fehlgeschlagen: {ex.Message}", false);
+        }
+    }
+
+    private async Task ImportFromPaste()
+    {
+        if (string.IsNullOrWhiteSpace(_pasteContent)) return;
+        _showPasteDialog = false;
+        await ImportArticleFromJson(_pasteContent);
+        _pasteContent = string.Empty;
+    }
+
+    // ═══════════════ SAVED ARTICLES ═══════════════
+    private async Task LoadSavedArticles()
+    {
+        try
+        {
+            var saved = await LocalStorage.GetItemAsync<List<SavedArticle>>(Constants.Storage.SavedArticleKey);
+            _savedArticles = saved ?? new();
+        }
+        catch { _savedArticles = new(); }
+    }
+
+    private void OpenSaveArticleDialog()
+    {
+        _saveArticleName = string.IsNullOrWhiteSpace(article.Title) ? "" : article.Title;
+        _showSaveNameDialog = true;
+    }
+
+    private async Task ConfirmSaveArticle()
+    {
+        if (string.IsNullOrWhiteSpace(_saveArticleName)) return;
+        var name = _saveArticleName.Trim();
+        var entry = new SavedArticle(name, DateTime.UtcNow, article.Clone());
+        _savedArticles.Insert(0, entry);
+        _showSaveNameDialog = false;
+        _saveArticleName = string.Empty;
+        await PersistSavedArticles();
+        await ShowNotification($"✓ Als «{name}» gespeichert", true);
+    }
+
+    private async Task LoadSavedArticleEntry(SavedArticle entry)
+    {
+        _showSavedArticles = false;
+        await ImportArticleFromJson(JsonSerializer.Serialize(entry.Data, Helpers.JsonOptions));
+    }
+
+    private async Task DeleteSavedArticleEntry(SavedArticle entry)
+    {
+        _savedArticles.Remove(entry);
+        await PersistSavedArticles();
+    }
+
+    private async Task PersistSavedArticles()
+        => await LocalStorage.SetItemAsync(Constants.Storage.SavedArticleKey, _savedArticles);
+
     private async Task CopyJsonSchema()
     {
         var schema = TemplateGenerator.GenerateJsonSchema(currentLayout);
@@ -818,6 +908,12 @@ public partial class Index
     // ═══════════════ NAVIGATION & HTML ═══════════════
     private async Task GoToPhase(int phase)
     {
+        if (phase == 2 && string.IsNullOrWhiteSpace(article.Title))
+        {
+            await ShowNotification("⚠ Titel fehlt – bitte vor der Vorschau ausfüllen.", false);
+            return;
+        }
+
         _navDirection = phase > currentPhase ? 1 : phase < currentPhase ? -1 : 0;
         _iframeLoaded = false;
         _lastSetHtml = string.Empty;

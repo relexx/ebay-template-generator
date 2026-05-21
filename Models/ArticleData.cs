@@ -33,6 +33,18 @@ public partial class ArticleData
         ModifiedAt = DateTime.UtcNow;
     }
     
+    public ArticleData Clone() => new()
+    {
+        Title = Title,
+        Subtitle = Subtitle,
+        MobileSummary = MobileSummary,
+        Footer = Footer,
+        BlockContents = new Dictionary<string, string>(BlockContents),
+        Layout = Layout,
+        CreatedAt = CreatedAt,
+        ModifiedAt = ModifiedAt
+    };
+
     public string GenerateFileName(string extension = "json")
     {
         var safeName = string.IsNullOrWhiteSpace(Title) 

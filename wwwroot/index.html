@@ -101,12 +101,13 @@
             });
         };
         
-        // Keyboard navigation: ← / → between stages (ignores inputs)
+        // Keyboard navigation: ← / → between stages; ? for shortcut overlay (ignores inputs)
         window.registerKeyNav = function(dotNetHelper) {
             document.addEventListener('keydown', function(e) {
                 if (e.target.matches('input, textarea, select')) return;
                 if (e.key === 'ArrowRight') dotNetHelper.invokeMethodAsync('NavigatePhase', 1);
                 if (e.key === 'ArrowLeft')  dotNetHelper.invokeMethodAsync('NavigatePhase', -1);
+                if (e.key === '?')          dotNetHelper.invokeMethodAsync('ToggleShortcutOverlay');
             });
         };
 
@@ -152,6 +153,50 @@
         };
         window.setAnimationsEnabled = function(enabled) {
             document.documentElement.setAttribute('data-animations', enabled ? 'on' : 'off');
+        };
+
+        // Sidebar drag-resize for .layout-split
+        window.initSidebarWidth = function(storageKey) {
+            var saved = localStorage.getItem(storageKey);
+            if (saved && !isNaN(parseInt(saved))) {
+                document.documentElement.style.setProperty('--sidebar-width', parseInt(saved) + 'px');
+            }
+        };
+
+        window.initSidebarResize = function(storageKey) {
+            var resizer = document.getElementById('layout-resizer');
+            if (!resizer || resizer._initialized) return;
+            resizer._initialized = true;
+
+            var startX, startWidth;
+
+            resizer.addEventListener('mousedown', function(e) {
+                startX = e.clientX;
+                startWidth = parseInt(
+                    getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width').trim() || '350'
+                );
+                resizer.classList.add('is-dragging');
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+
+            function onMove(e) {
+                var width = Math.max(200, Math.min(600, startWidth + e.clientX - startX));
+                document.documentElement.style.setProperty('--sidebar-width', width + 'px');
+            }
+
+            function onUp() {
+                var widthVal = getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width').trim();
+                localStorage.setItem(storageKey, parseInt(widthVal));
+                resizer.classList.remove('is-dragging');
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            }
         };
 
         window.destroySortable = function(elementId) {

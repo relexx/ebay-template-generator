@@ -224,7 +224,7 @@
             </div>
 
             <div class="layout-editor">
-                <div class="layout-split">
+                <div class="layout-split" id="layout-split">
                     <div class="layout-sidebar">
                         <Panel Title="Blöcke" Icon="blocks" Badge="@currentLayout.Blocks.Count.ToString()">
                             <Actions>
@@ -255,6 +255,8 @@
                             </ChildContent>
                         </Panel>
                     </div>
+
+                    <div class="layout-resizer" id="layout-resizer" title="Ziehen zum Anpassen der Breite"></div>
 
                     <Panel Title="@(SelectedBlock is not null ? "Block bearbeiten" : "Block-Editor")"
                            Icon="edit"
@@ -517,6 +519,16 @@
                             <button class="btn btn-secondary" @onclick="CopyJsonSchema" title="JSON-Schema kopieren">
                                 <Icon Name="fileJson" Size="14" /> Schema
                             </button>
+                            <button class="btn btn-accent btn-secondary page-actions-secondary" @onclick="OpenSaveArticleDialog" title="Artikel speichern">
+                                <Icon Name="bookmark" Size="14" /> Speichern
+                            </button>
+                            <button class="btn btn-secondary page-actions-secondary" @onclick="() => _showSavedArticles = true" title="Gespeicherte Artikel"
+                                    disabled="@(_savedArticles.Count == 0)">
+                                <Icon Name="list" Size="14" /> Gespeichert (@_savedArticles.Count)
+                            </button>
+                            <button class="btn btn-secondary page-actions-secondary" @onclick="() => _showPasteDialog = true" title="JSON einfügen">
+                                <Icon Name="clipboard" Size="14" /> Einfügen
+                            </button>
                             <button class="btn btn-secondary page-actions-secondary" @onclick="ExportArticle" title="Exportieren">
                                 <Icon Name="download" Size="14" /> Export
                             </button>
@@ -534,6 +546,16 @@
                                     title="Weitere Aktionen">···</button>
                         </div>
                         <div class="page-actions-flyout @(_showActionsOverflow ? "open" : "")">
+                            <button class="btn btn-accent btn-secondary" @onclick="async () => { _showActionsOverflow = false; OpenSaveArticleDialog(); }">
+                                <Icon Name="bookmark" Size="14" /> Speichern
+                            </button>
+                            <button class="btn btn-secondary" @onclick="async () => { _showActionsOverflow = false; _showSavedArticles = true; }"
+                                    disabled="@(_savedArticles.Count == 0)">
+                                <Icon Name="list" Size="14" /> Gespeichert (@_savedArticles.Count)
+                            </button>
+                            <button class="btn btn-secondary" @onclick="async () => { _showActionsOverflow = false; _showPasteDialog = true; }">
+                                <Icon Name="clipboard" Size="14" /> Einfügen
+                            </button>
                             <button class="btn btn-secondary" @onclick="async () => { _showActionsOverflow = false; await ExportArticle(); }">
                                 <Icon Name="download" Size="14" /> Export
                             </button>
@@ -699,7 +721,7 @@
                     <div class="html-badges">
                         <span class="badge badge-mono">@generatedHtml.Length Zeichen</span>
                         <span class="badge badge-mono">@generatedHtml.Split('\n').Length Zeilen</span>
-                        <span class="badge badge-mono">@((System.Text.Encoding.UTF8.GetByteCount(generatedHtml) / 1024.0).ToString("F1")) kB</span>
+                        <span class="badge badge-mono @(System.Text.Encoding.UTF8.GetByteCount(generatedHtml) > Constants.FileLimits.WarnHtmlSizeBytes ? "badge-warn" : "")">@((System.Text.Encoding.UTF8.GetByteCount(generatedHtml) / 1024.0).ToString("F1")) kB</span>
                         <span class="badge">UTF-8 · text/html</span>
                     </div>
                     <div class="btn-stack">
@@ -832,6 +854,106 @@
                     </div>
                     <div class="modal-actions modal-actions-row">
                         <button class="btn btn-primary" @onclick="CloseAbout">Los geht's!</button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (_showPasteDialog)
+        {
+            <div class="modal-overlay" @onclick="() => { _showPasteDialog = false; _pasteContent = string.Empty; }">
+                <div class="modal-dialog modal-paste" @onclick:stopPropagation>
+                    <h3>JSON einfügen</h3>
+                    <p class="modal-sub">Artikeldaten als JSON einfügen – z. B. aus dem KI-Schema-Workflow.</p>
+                    <div class="field">
+                        <div class="field-label"><span>JSON</span></div>
+                        <textarea rows="10" class="mono"
+                                  value="@_pasteContent"
+                                  @oninput="e => _pasteContent = e.Value?.ToString() ?? string.Empty"
+                                  placeholder='{ "Title": "...", "BlockContents": { ... } }'></textarea>
+                    </div>
+                    <div class="modal-actions modal-actions-row">
+                        <button class="btn btn-secondary" @onclick="() => { _showPasteDialog = false; _pasteContent = string.Empty; }">Abbrechen</button>
+                        <button class="btn btn-primary" @onclick="ImportFromPaste" disabled="@string.IsNullOrWhiteSpace(_pasteContent)">Laden</button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (_showSaveNameDialog)
+        {
+            <div class="modal-overlay" @onclick="() => _showSaveNameDialog = false">
+                <div class="modal-dialog" @onclick:stopPropagation>
+                    <h3>Artikel speichern</h3>
+                    <div class="field">
+                        <div class="field-label"><span>Name</span></div>
+                        <input type="text" value="@_saveArticleName"
+                               @oninput="e => _saveArticleName = e.Value?.ToString() ?? string.Empty"
+                               placeholder="Name für diesen Artikel..." />
+                    </div>
+                    <div class="modal-actions modal-actions-row">
+                        <button class="btn btn-secondary" @onclick="() => _showSaveNameDialog = false">Abbrechen</button>
+                        <button class="btn btn-primary" @onclick="ConfirmSaveArticle" disabled="@string.IsNullOrWhiteSpace(_saveArticleName)">Speichern</button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (_showSavedArticles)
+        {
+            <div class="modal-overlay" @onclick="() => _showSavedArticles = false">
+                <div class="modal-dialog modal-saved-articles" @onclick:stopPropagation>
+                    <h3>Gespeicherte Artikel</h3>
+                    @if (_savedArticles.Count == 0)
+                    {
+                        <p class="modal-empty">Noch keine Artikel gespeichert.</p>
+                    }
+                    else
+                    {
+                        <div class="saved-list">
+                            @foreach (var entry in _savedArticles)
+                            {
+                                var e = entry;
+                                <div class="saved-item">
+                                    <div class="saved-item-info">
+                                        <span class="saved-item-name">@e.Name</span>
+                                        <span class="saved-item-meta">@GetRelativeTime(e.SavedAt)</span>
+                                    </div>
+                                    <div class="saved-item-actions">
+                                        <button class="btn btn-small btn-primary" @onclick="() => LoadSavedArticleEntry(e)" title="Laden">
+                                            <Icon Name="upload" Size="13" /> Laden
+                                        </button>
+                                        <button class="btn btn-small btn-danger"
+                                                @onclick='() => { _showSavedArticles = false; AskConfirm("Artikel löschen", $"«{e.Name}» wird aus der Gespeichert-Liste entfernt.", async () => await DeleteSavedArticleEntry(e)); }'
+                                                title="Löschen">
+                                            <Icon Name="trash" Size="13" />
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <div class="modal-actions modal-actions-row">
+                        <button class="btn btn-secondary" @onclick="() => _showSavedArticles = false">Schließen</button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (_showShortcuts)
+        {
+            <div class="modal-overlay" @onclick="() => _showShortcuts = false">
+                <div class="modal-dialog modal-shortcuts" @onclick:stopPropagation>
+                    <h3>Tastaturkürzel</h3>
+                    <table class="shortcuts-table">
+                        <tbody>
+                            <tr><td class="key"><kbd>→</kbd></td><td>Nächste Phase (wenn freigeschaltet)</td></tr>
+                            <tr><td class="key"><kbd>←</kbd></td><td>Vorherige Phase</td></tr>
+                            <tr><td class="key"><kbd>?</kbd></td><td>Diese Hilfe öffnen / schließen</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="modal-actions modal-actions-row">
+                        <button class="btn btn-secondary" @onclick="() => _showShortcuts = false">Schließen</button>
                     </div>
                 </div>
             </div>

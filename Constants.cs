@@ -8,17 +8,21 @@ public static class Constants
     /// <summary>LocalStorage Keys</summary>
     public static class Storage
     {
-        public const string LayoutsKey = "relexx-layouts";
-        public const string ArticleKey = "relexx-article";
-        public const string SettingsKey = "relexx-settings";
-        public const string FirstRunKey  = "relexx-first-run";
+        public const string LayoutsKey      = "relexx-layouts";
+        public const string ArticleKey      = "relexx-article";
+        public const string SettingsKey     = "relexx-settings";
+        public const string FirstRunKey     = "relexx-first-run";
+        public const string SavedArticleKey = "relexx-saved-articles";
+        public const string SidebarWidthKey = "relexx-sidebar-width";
     }
     
     /// <summary>Dateigrößen-Limits</summary>
     public static class FileLimits
     {
-        public const long MaxImageSizeBytes = 5 * 1024 * 1024;  // 5 MB
-        public const long MaxImportSizeBytes = 10 * 1024 * 1024; // 10 MB
+        public const long MaxImageSizeBytes  = 5 * 1024 * 1024;   // 5 MB hard limit
+        public const long WarnImageSizeBytes = 1 * 1024 * 1024;   // 1 MB soft warning
+        public const long MaxImportSizeBytes = 10 * 1024 * 1024;  // 10 MB
+        public const long WarnHtmlSizeBytes  = 500 * 1024;        // 500 kB HTML output warning
     }
     
     /// <summary>UI-Zeitkonstanten</summary>

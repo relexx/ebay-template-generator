@@ -1182,15 +1182,45 @@ input, select, textarea, button {
 
 .layout-split {
     display: grid;
-    grid-template-columns: 350px 1fr;
-    gap: 24px;
+    grid-template-columns: var(--sidebar-width, 350px) 10px 1fr;
+    gap: 0;
     min-height: 500px;
+    align-items: start;
 }
 
 .layout-sidebar {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    padding-right: 12px;
+}
+
+.layout-resizer {
+    align-self: stretch;
+    cursor: col-resize;
+    position: relative;
+    margin: 0 4px;
+    border-radius: 3px;
+    transition: background 0.15s;
+}
+
+.layout-resizer::after {
+    content: '';
+    position: absolute;
+    inset: 8px 3px;
+    border-left: 2px dotted var(--color-border);
+    border-radius: 1px;
+    transition: border-color 0.15s;
+}
+
+.layout-resizer:hover::after,
+.layout-resizer.is-dragging::after {
+    border-color: var(--color-accent);
+}
+
+.layout-resizer:hover,
+.layout-resizer.is-dragging {
+    background: var(--color-accent-subtle, rgba(var(--accent-l), var(--accent-c), var(--accent-h), 0.08));
 }
 
 .color-panel-fields {
@@ -1758,6 +1788,12 @@ textarea {
     font-size: 0.72rem;
 }
 
+.badge-warn {
+    background: oklch(0.72 0.16 60 / 0.15);
+    color: oklch(0.72 0.16 60);
+    border-color: oklch(0.72 0.16 60 / 0.35);
+}
+
 .html-code {
     margin: 0;
     padding: 20px;
@@ -2043,6 +2079,7 @@ textarea {
     .layout-split {
         grid-template-columns: 1fr;
     }
+    .layout-resizer { display: none; }
 
     .form-grid {
         grid-template-columns: 1fr;
@@ -2108,6 +2145,96 @@ textarea {
         flex-direction: column;
         align-items: flex-start;
     }
+}
+
+/* ========== Paste / Save / Saved Articles / Shortcuts Modals ========== */
+.modal-paste   { max-width: 600px; }
+.modal-paste .field textarea { font-size: 0.8rem; }
+.modal-sub {
+    margin: -8px 0 16px;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.modal-saved-articles { max-width: 520px; }
+.modal-empty {
+    text-align: center;
+    color: var(--color-text-muted);
+    padding: 20px 0;
+    font-size: 0.9rem;
+}
+
+.saved-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+}
+
+.saved-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.saved-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.saved-item-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.saved-item-meta {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
+.saved-item-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.modal-shortcuts { max-width: 400px; }
+.shortcuts-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+.shortcuts-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.9rem;
+    color: var(--color-text);
+}
+.shortcuts-table tr:last-child td { border-bottom: none; }
+.shortcuts-table .key { width: 80px; }
+kbd {
+    display: inline-block;
+    padding: 3px 8px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--color-text);
+    box-shadow: 0 1px 0 var(--color-border);
 }
 
 /* ========== Animations disabled ========== */
