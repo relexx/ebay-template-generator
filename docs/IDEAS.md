@@ -88,24 +88,24 @@ Ursprüngliche Vorschläge, die in `Constants.AvailableIcons` aufgenommen wurden
 
 ### Editing
 
-- **Undo / Redo** (Ctrl+Z / Ctrl+Y) — für Layout-Änderungen und Eingabe-Phase
-- **Schema pasten** — JSON aus Text in der Zwischenablage direkt laden (quasi wie Import, nur ohne Datei-Zwischenschritt)
-- **Speichern von Artikeln** — Möglichkeit, auch Artikel im LocalStorage zu speichern, sodass man sie später z.B. als Vorlage für weitere Artikel wieder abrufen kann.
+- ~~**Undo / Redo** (Ctrl+Z / Ctrl+Y) — für Layout-Änderungen und Eingabe-Phase~~ → zurückgestellt (OPEN_POINTS.md)
+- ✅ **Schema pasten** — JSON aus Text in der Zwischenablage direkt laden (quasi wie Import, nur ohne Datei-Zwischenschritt)
+- ✅ **Speichern von Artikeln** — Möglichkeit, auch Artikel im LocalStorage zu speichern, sodass man sie später z.B. als Vorlage für weitere Artikel wieder abrufen kann.
 
 ### Vorschau & Export
 
-- **Bild-Optimierung** — Hinweis bei zu großen Base64-Bildern, Vorschlag zum Verkleinern
-- **Batch-Export** — mehrere gespeicherte Artikel auf einmal als ZIP exportieren
+- ✅ **Bild-Optimierung** — Hinweis bei zu großen Base64-Bildern, Vorschlag zum Verkleinern
+- ~~**Batch-Export** — mehrere gespeicherte Artikel auf einmal als ZIP exportieren~~ → zurückgestellt (OPEN_POINTS.md)
 
 ### Workflow
 
-- **Keyboard-Shortcut-Overlay** (? oder F1) — alle verfügbaren Shortcuts in einem Modal
+- ✅ **Keyboard-Shortcut-Overlay** (? oder F1) — alle verfügbaren Shortcuts in einem Modal
 
 ### Qualität & UX
 
-- **Auto-Validierung** — warnt vor leerem Pflichtfeld (Titel) bevor Phase 1 → 2 möglich ist
-- **HTML-Größenindikator mit Grenze** — Warnung ab z.B. 500 kB bzw. 500000 Zeichen (eBay-Limit)
-- **Spaltenbreite Sidebar anpassbar** — Drag-Resize des `.layout-split`-Grids
+- ✅ **Auto-Validierung** — warnt vor leerem Pflichtfeld (Titel) bevor Phase 1 → 2 möglich ist
+- ✅ **HTML-Größenindikator mit Grenze** — Warnung ab z.B. 500 kB bzw. 500000 Zeichen (eBay-Limit)
+- ✅ **Spaltenbreite Sidebar anpassbar** — Drag-Resize des `.layout-split`-Grids
 
 ---
 

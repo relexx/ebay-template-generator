@@ -25,7 +25,7 @@ Phasen werden im Stepper als erledigt (`✓`) markiert; vorwärts ist nur nach A
 
 ### Modulares Block-System
 
-**7 Block-Typen:**
+**14 Block-Typen:**
 
 | Typ                    | Format                            | Optionen                                        |
 | ---------------------- | --------------------------------- | ----------------------------------------------- |
@@ -36,11 +36,20 @@ Phasen werden im Stepper als erledigt (`✓`) markiert; vorwärts ist nur nach A
 | **Feature-Karten**     | `Kategorie \| Option1, Option2`   | Farbige Karten nebeneinander                    |
 | **Aufzählungsliste**   | Ein Eintrag pro Zeile             | Aufzählungszeichen (✓ · ▸ ★ …)                  |
 | **Fester Text**        | Markdown, im Layout hinterlegt    | Pro Artikel editierbar, Zurücksetzen auf Vorlage |
+| **Pros & Cons**        | `+ Vorteil` / `- Nachteil` pro Zeile | Zweispaltige Tabelle                         |
+| **Hinweisbox**         | Markdown-Text                     | Variante: Info / Hinweis / Tipp / Achtung       |
+| **Badge-Streifen**     | Ein Badge-Text pro Zeile          | Farbige Chips horizontal                        |
+| **Bewertung**          | Note (1–5) + optionaler Untertitel| Sternebewertung mit Score-Anzeige               |
+| **Bildergalerie**      | Bild-URL pro Zeile                | 2–4 Spalten konfigurierbar                      |
+| **Link-Liste**         | `Beschriftung \| URL` pro Zeile   | Klickbare Links mit `target="_blank"`            |
+| **Hero-Banner**        | URL + Titel + Untertitel          | Textausrichtung, Overlay-Deckkraft (0–85%)      |
 
 - **Drag & Drop**: Blöcke per SortableJS frei anordnen
 - **Block-ID**: Eindeutiger Kurzname je Block, sichtbar als Badge im Editor; doppelte IDs werden abgefangen
 - **Icon-Picker**: Jedem Block ein Lucide-Icon aus 6 kategorisierten Gruppen (Versand, Qualität, Technik, Kommunikation, Allgemein, UI) zuweisen
 - **Demo-Daten**: Ein Klick füllt alle Felder des aktiven Layouts mit Beispielinhalten
+- **Artikel speichern**: Aktuelle Eingaben als benannten Snapshot speichern, später laden oder löschen
+- **Schema einfügen**: JSON aus der Zwischenablage direkt importieren (z. B. aus KI-generiertem Schema)
 
 ---
 
@@ -104,6 +113,11 @@ Phasen werden im Stepper als erledigt (`✓`) markiert; vorwärts ist nur nach A
 - **Panel / Field-Komponenten**: Wiederverwendbare Blazor-Komponenten für konsistente Abschnitte mit Titel, Icon, Badge und Actions-Slot
 - **„Über die App"-Dialog**: Zeigt Versionsinformationen, Features und verwendete Bibliotheken; erscheint automatisch beim ersten Start und ist jederzeit über die Einstellungen abrufbar
 - **„Alle lokalen Daten entfernen"**: Löscht sämtliche gespeicherten Daten (Layouts, Artikel, Einstellungen) per `localStorage.clear()` mit Sicherheitsabfrage
+- **Tastenkürzel-Overlay**: `?` öffnet eine Übersicht aller verfügbaren Tastaturkürzel
+- **Auto-Validierung**: Warnt beim Wechsel zur Vorschau wenn der Artikel-Titel fehlt
+- **HTML-Größenindikator**: kB-Badge in der HTML-Phase wird bei > 500 kB orange hervorgehoben
+- **Anpassbare Sidebar-Breite**: Trennlinie zwischen Block-Liste und Editor per Drag & Drop verschiebbar; Breite wird gespeichert
+- **Bild-Optimierungswarnung**: Hinweis bei Upload von Bildern > 1 MB
 
 ---
 
@@ -201,6 +215,7 @@ ebay-template-generator/
 | ----- | ----------------------------------- |
 | `→`   | Nächste Phase (wenn freigeschaltet) |
 | `←`   | Vorherige Phase                     |
+| `?`   | Tastaturkürzel-Übersicht öffnen     |
 
 ---
 
